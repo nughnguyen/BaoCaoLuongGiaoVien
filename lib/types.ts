@@ -4,12 +4,20 @@ export type Profile = {
   role: "admin" | "teacher";
 };
 
+export type ScheduleDetail = {
+  day: number;
+  start_time: string;
+  end_time: string;
+  duration: number;
+};
+
 export type ClassRow = {
   id: string;
   class_name: string;
   student_name: string;
   hourly_rate: number;
   schedule: number[];
+  schedule_details: ScheduleDetail[];
   program_details: string | null;
   teacher_name: string;
 };

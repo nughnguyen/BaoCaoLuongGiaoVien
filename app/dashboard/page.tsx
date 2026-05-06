@@ -28,7 +28,7 @@ export default async function DashboardPage() {
 
   const { data: classesRaw } = await supabase
     .from("classes")
-    .select("id, class_name, student_name, hourly_rate, schedule, program_details, teacher_name")
+    .select("id, class_name, student_name, hourly_rate, schedule, schedule_details, program_details, teacher_name")
     .eq("user_id", user.id)
     .order("class_name");
   const classes = (classesRaw ?? []) as ClassRow[];

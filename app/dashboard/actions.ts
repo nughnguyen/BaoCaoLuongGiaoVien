@@ -30,6 +30,13 @@ export async function createClass(formData: FormData): Promise<ActionResult> {
     .map((v) => Number(v))
     .filter((v) => Number.isInteger(v) && v >= 0 && v <= 6);
   const hourlyRate = parseDuration(formData.get("hourly_rate"));
+  
+  let scheduleDetails = [];
+  try {
+    scheduleDetails = JSON.parse(String(formData.get("schedule_details") || "[]"));
+  } catch (e) {
+    // ignore
+  }
 
   if (!className || !studentName || !teacherName || !Number.isFinite(hourlyRate) || schedule.length === 0) {
     return { error: "Thiếu thông tin lớp, lịch học, học viên, giáo viên hoặc mức lương/giờ." };
@@ -41,6 +48,7 @@ export async function createClass(formData: FormData): Promise<ActionResult> {
     student_name: studentName,
     hourly_rate: hourlyRate,
     schedule,
+    schedule_details: scheduleDetails,
     teacher_name: teacherName,
   });
   if (error) return { error: error.message };
@@ -142,6 +150,13 @@ export async function updateClass(formData: FormData): Promise<ActionResult> {
     .filter((v) => Number.isInteger(v) && v >= 0 && v <= 6);
   const hourlyRate = parseDuration(formData.get("hourly_rate"));
 
+  let scheduleDetails = [];
+  try {
+    scheduleDetails = JSON.parse(String(formData.get("schedule_details") || "[]"));
+  } catch (e) {
+    // ignore
+  }
+
   if (!id || !className || !studentName || !teacherName || !Number.isFinite(hourlyRate) || schedule.length === 0) {
     return { error: "Thiếu thông tin cần cập nhật." };
   }
@@ -153,12 +168,77 @@ export async function updateClass(formData: FormData): Promise<ActionResult> {
       student_name: studentName,
       hourly_rate: hourlyRate,
       schedule,
+      schedule_details: scheduleDetails,
       teacher_name: teacherName,
     })
     .eq("id", id)
     .eq("user_id", user.id);
 
   if (error) return { error: error.message };
+
+  revalidatePath("/dashboard");
+  return { error: null };
+}
+
+export async function addManualLog(formData: FormData): Promise<ActionResult> {
+  const classId = String(formData.get("class_id") ?? "");
+  const dateStr = String(formData.get("date") ?? "");
+  const duration = parseDuration(formData.get("duration"));
+
+  if (!classId || !dateStr || !Number.isFinite(duration) || duration <= 0) {
+    return { error: "Thông tin ca dạy thủ công không hợp lệ." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Chưa đăng nhập." };
+
+  const { data: classRow, error: classErr } = await supabase
+    .from("classes")
+    .select("hourly_rate")
+    .eq("id", classId)
+    .eq("user_id", user.id)
+    .single();
+  
+  if (classErr || !classRow) return { error: "Không tìm thấy lớp học." };
+
+  // Check if checkin already exists
+  const { data: existing } = await supabase
+    .from("daily_checkins")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("class_id", classId)
+    .eq("date", dateStr)
+    .maybeSingle();
+
+  if (existing) return { error: "Ngày này đã có điểm danh trên hệ thống." };
+
+  // Insert daily checkin
+  const { error: checkinError } = await supabase.from("daily_checkins").insert({
+    user_id: user.id,
+    class_id: classId,
+    date: dateStr,
+    status: "present",
+  });
+
+  if (checkinError) return { error: checkinError.message };
+
+  // Insert attendance log
+  const logDate = new Date(dateStr);
+  const totalEarned = Number(classRow.hourly_rate) * duration;
+  const { error: logError } = await supabase.from("attendance_logs").insert({
+    user_id: user.id,
+    class_id: classId,
+    date: dateStr,
+    duration,
+    total_earned: totalEarned,
+    month_key: monthKey(logDate),
+    status: "completed",
+  });
+
+  if (logError) return { error: logError.message };
 
   revalidatePath("/dashboard");
   return { error: null };
