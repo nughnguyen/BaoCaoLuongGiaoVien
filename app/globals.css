@@ -1,8 +1,12 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #e8eef7;
+  --foreground: #22324d;
+  --clay-light: #f6f9ff;
+  --clay-mid: #e7eef9;
+  --clay-shadow-dark: #c8d4e7;
+  --clay-shadow-light: #ffffff;
 }
 
 @theme inline {
@@ -14,13 +18,59 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #18243a;
+    --foreground: #e8f1ff;
+    --clay-light: #223252;
+    --clay-mid: #1a2a45;
+    --clay-shadow-dark: #111a2b;
+    --clay-shadow-light: #2a3f63;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+.clay-surface {
+  background: linear-gradient(145deg, var(--clay-light), var(--clay-mid));
+  border-radius: 32px;
+  box-shadow:
+    10px 10px 20px var(--clay-shadow-dark),
+    -10px -10px 20px var(--clay-shadow-light);
+}
+
+.clay-card {
+  background: linear-gradient(145deg, var(--clay-light), var(--clay-mid));
+  border-radius: 30px;
+  box-shadow:
+    12px 12px 24px color-mix(in srgb, var(--clay-shadow-dark) 75%, transparent),
+    -10px -10px 20px color-mix(in srgb, var(--clay-shadow-light) 80%, transparent),
+    inset 2px 2px 4px color-mix(in srgb, #ffffff 75%, transparent);
+}
+
+.clay-inset {
+  background: linear-gradient(145deg, var(--clay-mid), var(--clay-light));
+  border-radius: 20px;
+  box-shadow:
+    inset 4px 4px 8px color-mix(in srgb, var(--clay-shadow-dark) 75%, transparent),
+    inset -4px -4px 8px color-mix(in srgb, #ffffff 90%, transparent);
+}
+
+.clay-btn {
+  background: linear-gradient(145deg, #3ecf8e, #2fb478);
+  border-radius: 22px;
+  color: #ffffff;
+  box-shadow:
+    5px 5px 10px color-mix(in srgb, #2b7d5a 60%, transparent),
+    -4px -4px 10px color-mix(in srgb, #79f4bd 50%, transparent);
+}
+
+.clay-btn:hover {
+  filter: brightness(1.03);
+}
+
+.clay-btn:disabled {
+  opacity: 0.65;
 }
