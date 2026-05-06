@@ -24,15 +24,15 @@ export async function createClass(formData: FormData): Promise<ActionResult> {
 
   const className = String(formData.get("class_name") ?? "").trim();
   const studentName = String(formData.get("student_name") ?? "").trim();
-  const programDetails = String(formData.get("program_details") ?? "").trim();
+  const teacherName = String(formData.get("teacher_name") ?? "").trim();
   const schedule = formData
     .getAll("schedule")
     .map((v) => Number(v))
     .filter((v) => Number.isInteger(v) && v >= 0 && v <= 6);
   const hourlyRate = parseDuration(formData.get("hourly_rate"));
 
-  if (!className || !studentName || !Number.isFinite(hourlyRate) || schedule.length === 0) {
-    return { error: "Thiếu thông tin lớp, lịch học, học viên hoặc mức lương/giờ." };
+  if (!className || !studentName || !teacherName || !Number.isFinite(hourlyRate) || schedule.length === 0) {
+    return { error: "Thiếu thông tin lớp, lịch học, học viên, giáo viên hoặc mức lương/giờ." };
   }
 
   const { error } = await supabase.from("classes").insert({
@@ -41,7 +41,7 @@ export async function createClass(formData: FormData): Promise<ActionResult> {
     student_name: studentName,
     hourly_rate: hourlyRate,
     schedule,
-    program_details: programDetails || null,
+    teacher_name: teacherName,
   });
   if (error) return { error: error.message };
 
@@ -123,4 +123,43 @@ export async function signOut() {
   await supabase.auth.signOut();
   revalidatePath("/", "layout");
   redirect("/");
+}
+
+export async function updateClass(formData: FormData): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Chưa đăng nhập." };
+
+  const id = String(formData.get("id") ?? "");
+  const className = String(formData.get("class_name") ?? "").trim();
+  const studentName = String(formData.get("student_name") ?? "").trim();
+  const teacherName = String(formData.get("teacher_name") ?? "").trim();
+  const schedule = formData
+    .getAll("schedule")
+    .map((v) => Number(v))
+    .filter((v) => Number.isInteger(v) && v >= 0 && v <= 6);
+  const hourlyRate = parseDuration(formData.get("hourly_rate"));
+
+  if (!id || !className || !studentName || !teacherName || !Number.isFinite(hourlyRate) || schedule.length === 0) {
+    return { error: "Thiếu thông tin cần cập nhật." };
+  }
+
+  const { error } = await supabase
+    .from("classes")
+    .update({
+      class_name: className,
+      student_name: studentName,
+      hourly_rate: hourlyRate,
+      schedule,
+      teacher_name: teacherName,
+    })
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/dashboard");
+  return { error: null };
 }

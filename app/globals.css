@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
 :root {
-  --background: #e8eef7;
-  --foreground: #22324d;
-  --clay-light: #f6f9ff;
-  --clay-mid: #e7eef9;
-  --clay-shadow-dark: #c8d4e7;
+  --background: #e0f7fa; /* cyan-50 */
+  --foreground: #083344; /* cyan-950 */
+  --clay-light: #ecfeff;
+  --clay-mid: #e0f7fa;
+  --clay-shadow-dark: #b3d7da;
   --clay-shadow-light: #ffffff;
 }
 
@@ -18,12 +18,12 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #18243a;
-    --foreground: #e8f1ff;
-    --clay-light: #223252;
-    --clay-mid: #1a2a45;
-    --clay-shadow-dark: #111a2b;
-    --clay-shadow-light: #2a3f63;
+    --background: #083344; /* cyan-950 */
+    --foreground: #ecfeff; /* cyan-50 */
+    --clay-light: #164e63; /* cyan-900 */
+    --clay-mid: #083344;
+    --clay-shadow-dark: #041c26;
+    --clay-shadow-light: #0d4f6c;
   }
 }
 
@@ -59,12 +59,12 @@ body {
 }
 
 .clay-btn {
-  background: linear-gradient(145deg, #3ecf8e, #2fb478);
+  background: linear-gradient(145deg, #22d3ee, #06b6d4);
   border-radius: 22px;
   color: #ffffff;
   box-shadow:
-    5px 5px 10px color-mix(in srgb, #2b7d5a 60%, transparent),
-    -4px -4px 10px color-mix(in srgb, #79f4bd 50%, transparent);
+    5px 5px 10px color-mix(in srgb, #0891b2 60%, transparent),
+    -4px -4px 10px color-mix(in srgb, #67e8f9 50%, transparent);
 }
 
 .clay-btn:hover {

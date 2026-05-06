@@ -4,6 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CalendarCheck2 } from "lucide-react";
 import ClassForm from "./class-form";
+import ClassList from "./class-list";
 import TodayCheckinCard from "./today-checkin-card";
 import { signOut } from "./actions";
 
@@ -27,7 +28,7 @@ export default async function DashboardPage() {
 
   const { data: classesRaw } = await supabase
     .from("classes")
-    .select("id, class_name, student_name, hourly_rate, schedule, program_details")
+    .select("id, class_name, student_name, hourly_rate, schedule, program_details, teacher_name")
     .eq("user_id", user.id)
     .order("class_name");
   const classes = (classesRaw ?? []) as ClassRow[];
@@ -83,9 +84,12 @@ export default async function DashboardPage() {
 
       <TodayCheckinCard classes={todayClasses} />
 
-      <section className="space-y-3">
-        <h2 className="text-sm font-medium text-zinc-700">Quản lý lớp học</h2>
+      <section className="space-y-4">
+        <h2 className="text-lg font-medium text-cyan-900">Quản lý lớp học</h2>
         <ClassForm />
+        
+        <h3 className="text-sm font-medium text-zinc-700 mt-6 mb-2">Danh sách các lớp hiện có</h3>
+        <ClassList classes={classes} />
       </section>
 
       <section className="space-y-3">

@@ -11,11 +11,12 @@ export default function ClassForm() {
     e.preventDefault();
     setError(null);
     setPending(true);
-    const fd = new FormData(e.currentTarget);
+    const form = e.currentTarget;
+    const fd = new FormData(form);
     const res = await createClass(fd);
     setPending(false);
     if (res?.error) setError(res.error);
-    else e.currentTarget.reset();
+    else form.reset();
   }
 
   return (
@@ -24,10 +25,20 @@ export default function ClassForm() {
       className="clay-card flex flex-wrap items-end gap-4 p-5"
     >
       <label className="flex min-w-[190px] flex-col gap-1 text-sm">
-        Tên lớp học
+        Chương trình (Tên lớp)
         <input
           name="class_name"
           required
+          placeholder="Lớp 8, luyện thi IELTS..."
+          className="clay-inset px-3 py-2 outline-none"
+        />
+      </label>
+      <label className="flex min-w-[190px] flex-col gap-1 text-sm">
+        Giáo viên phụ trách
+        <input
+          name="teacher_name"
+          required
+          placeholder="Cô Lan, Thầy Hùng..."
           className="clay-inset px-3 py-2 outline-none"
         />
       </label>
@@ -50,14 +61,7 @@ export default function ClassForm() {
           className="clay-inset px-3 py-2 outline-none"
         />
       </label>
-      <label className="flex min-w-[190px] flex-col gap-1 text-sm">
-        Chương trình
-        <input
-          name="program_details"
-          placeholder="Lớp 8, phổ thông..."
-          className="clay-inset px-3 py-2 outline-none"
-        />
-      </label>
+
       <div className="w-full">
         <p className="mb-2 text-sm font-medium">Lịch học trong tuần</p>
         <div className="flex flex-wrap gap-2 text-sm">

@@ -112,7 +112,7 @@ export default function LoginPage() {
       </form>
 
       <p className="text-center text-sm text-zinc-500">
-        <Link href="/" className="text-emerald-700 hover:underline">
+        <Link href="/" className="text-cyan-700 hover:underline">
           ← Về trang chủ
         </Link>
       </p>

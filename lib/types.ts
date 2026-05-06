@@ -11,6 +11,7 @@ export type ClassRow = {
   hourly_rate: number;
   schedule: number[];
   program_details: string | null;
+  teacher_name: string;
 };
 
 export type AttendanceLogRow = {
