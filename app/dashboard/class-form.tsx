@@ -3,6 +3,11 @@
 import { createClass } from "./actions";
 import { useState } from "react";
 import type { ScheduleDetail } from "@/lib/types";
+import TimePicker from "./time-picker";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { AnimatePresence, easeOut, motion } from "motion/react";
+import { sonner13, sonner16 } from "@/lib/sonner-presets";
 
 export default function ClassForm() {
   const [pending, setPending] = useState(false);
@@ -48,10 +53,14 @@ export default function ClassForm() {
 
     const res = await createClass(fd);
     setPending(false);
-    if (res?.error) setError(res.error);
+    if (res?.error) {
+      setError(res.error);
+      sonner16("Không thể thêm lớp", res.error);
+    }
     else {
       form.reset();
       setSchedules([]);
+      sonner13("Đã thêm lớp mới");
     }
   }
 
@@ -114,53 +123,63 @@ export default function ClassForm() {
           ].map(({ value, label }) => {
             const isSelected = !!schedules.find((s) => s.day === value);
             return (
-              <label 
-                key={value} 
-                className={`flex items-center justify-center min-w-[50px] px-3 py-2 cursor-pointer transition-all rounded-xl ${isSelected ? 'bg-cyan-600 text-white shadow-[4px_4px_8px_#b3d7da,-4px_-4px_8px_#ffffff] font-semibold' : 'clay-inset text-slate-500 hover:text-cyan-800'}`}
-              >
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={() => toggleDay(value)}
-                  className="hidden"
-                />
-                {label}
-              </label>
+              <ConfettiCheckbox
+                key={value}
+                checked={isSelected}
+                label={label}
+                onChange={() => {
+                  toggleDay(value);
+                }}
+              />
             );
           })}
         </div>
 
         {/* Selected days time inputs */}
         {schedules.length > 0 && (
-          <div className="flex flex-col gap-3 text-sm bg-cyan-50/30 p-3 rounded-2xl">
-            {schedules.sort((a, b) => a.day - b.day).map((schedule) => {
-              const label = schedule.day === 0 ? "Chủ nhật" : `Thứ ${schedule.day + 1}`;
+          <div className="flex flex-col gap-2 text-sm bg-cyan-50/30 p-3 rounded-2xl">
+            {[...schedules].sort((a, b) => a.day - b.day).map((schedule) => {
+              const label = schedule.day === 0 ? "CN" : `T${schedule.day + 1}`;
+              const labelFull = schedule.day === 0 ? "Chủ nhật" : `Thứ ${schedule.day + 1}`;
               return (
-                <div key={schedule.day} className="flex flex-wrap items-center gap-3">
-                  <span className="font-medium w-[70px] text-cyan-900">{label}:</span>
-                  <div className="flex items-center gap-2">
-                    Từ
-                    <input
-                      type="time"
-                      lang="en-GB"
+                <div
+                  key={schedule.day}
+                  className="grid items-center gap-2 py-1"
+                  style={{ gridTemplateColumns: "3rem 1fr auto" }}
+                >
+                  {/* Label */}
+                  <span className="font-semibold text-cyan-800 text-xs bg-cyan-100/70 text-center px-1 py-1 rounded-lg">
+                    {label}
+                  </span>
+
+                  {/* Time pickers */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <TimePicker
+                      id={`start-${schedule.day}`}
                       value={schedule.start_time}
-                      onChange={(e) => updateTime(schedule.day, "start_time", e.target.value)}
-                      className="clay-inset px-2 py-1 outline-none w-[90px]"
-                      required
+                      onChange={(v) => updateTime(schedule.day, "start_time", v)}
                     />
-                    đến
-                    <input
-                      type="time"
-                      lang="en-GB"
+                    <span className="text-slate-400 text-xs select-none">→</span>
+                    <TimePicker
+                      id={`end-${schedule.day}`}
                       value={schedule.end_time}
-                      onChange={(e) => updateTime(schedule.day, "end_time", e.target.value)}
-                      className="clay-inset px-2 py-1 outline-none w-[90px]"
-                      required
+                      onChange={(v) => updateTime(schedule.day, "end_time", v)}
                     />
-                    <span className="text-cyan-800 font-medium ml-2">
-                      ({schedule.duration} giờ)
+                    <span className="text-cyan-700 font-semibold text-xs bg-cyan-100/60 px-2 py-0.5 rounded-full whitespace-nowrap">
+                      {schedule.duration}h
                     </span>
                   </div>
+
+                  {/* Nút xóa ca — luôn cố định bên phải */}
+                  <button
+                    type="button"
+                    onClick={() => toggleDay(schedule.day)}
+                    title={`Xóa ca ${labelFull}`}
+                    aria-label={`Xóa ca ${labelFull}`}
+                    className="w-7 h-7 flex items-center justify-center rounded-full text-slate-400 hover:text-white hover:bg-red-400 active:bg-red-500 transition-all duration-150 text-xs font-bold shrink-0"
+                  >
+                    ✕
+                  </button>
                 </div>
               );
             })}
@@ -180,5 +199,70 @@ export default function ClassForm() {
         {pending ? "Đang tạo…" : "Thêm lớp"}
       </button>
     </form>
+  );
+}
+
+function particleAnimation(index: number) {
+  const angle = Math.random() * Math.PI * 2;
+  const distance = 24 + Math.random() * 16;
+  return {
+    initial: { x: "50%", y: "50%", scale: 0, opacity: 0 },
+    animate: {
+      x: `calc(50% + ${Math.cos(angle) * distance}px)`,
+      y: `calc(50% + ${Math.sin(angle) * distance}px)`,
+      scale: [0, 1, 0],
+      opacity: [0, 1, 0],
+    },
+    transition: { duration: 0.4, delay: index * 0.04, ease: easeOut },
+  };
+}
+
+function ConfettiCheckbox({
+  checked,
+  label,
+  onChange,
+}: {
+  checked: boolean;
+  label: string;
+  onChange: () => void;
+}) {
+  const [showConfetti, setShowConfetti] = useState(false);
+  const id = `day-${label}`;
+  return (
+    <div
+      className={`relative flex items-center gap-2 rounded-xl px-2 py-1.5 ${
+        checked ? "bg-cyan-600 text-white shadow-md" : "clay-inset text-slate-500"
+      }`}
+    >
+      <Checkbox
+        id={id}
+        checked={checked}
+        onCheckedChange={(value) => {
+          if (value) {
+            setShowConfetti(true);
+            window.setTimeout(() => setShowConfetti(false), 800);
+          }
+          onChange();
+        }}
+        className="border-white/60 data-[state=checked]:bg-white data-[state=checked]:text-cyan-700"
+      />
+      <Label htmlFor={id} className="cursor-pointer text-xs font-semibold">
+        {label}
+      </Label>
+      <AnimatePresence>
+        {showConfetti && (
+          <div className="pointer-events-none absolute inset-0">
+            {[...Array(10)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute size-1 rounded-full"
+                style={{ backgroundColor: ["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#00FFFF"][i % 6] }}
+                {...particleAnimation(i)}
+              />
+            ))}
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

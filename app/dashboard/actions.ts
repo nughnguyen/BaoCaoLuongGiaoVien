@@ -34,7 +34,7 @@ export async function createClass(formData: FormData): Promise<ActionResult> {
   let scheduleDetails = [];
   try {
     scheduleDetails = JSON.parse(String(formData.get("schedule_details") || "[]"));
-  } catch (e) {
+  } catch {
     // ignore
   }
 
@@ -153,7 +153,7 @@ export async function updateClass(formData: FormData): Promise<ActionResult> {
   let scheduleDetails = [];
   try {
     scheduleDetails = JSON.parse(String(formData.get("schedule_details") || "[]"));
-  } catch (e) {
+  } catch {
     // ignore
   }
 
@@ -239,6 +239,47 @@ export async function addManualLog(formData: FormData): Promise<ActionResult> {
   });
 
   if (logError) return { error: logError.message };
+
+  revalidatePath("/dashboard");
+  return { error: null };
+}
+
+export async function deleteLog(formData: FormData): Promise<ActionResult> {
+  const logId = String(formData.get("log_id") ?? "");
+  const classId = String(formData.get("class_id") ?? "");
+  const date = String(formData.get("date") ?? "");
+
+  if (!logId || !classId || !date) {
+    return { error: "Thiếu thông tin ca dạy cần xóa." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { error: "Chưa đăng nhập." };
+
+  const { error: logError } = await supabase
+    .from("attendance_logs")
+    .delete()
+    .eq("id", logId)
+    .eq("user_id", user.id);
+
+  if (logError) {
+    return { error: logError.message };
+  }
+
+  const { error: checkinError } = await supabase
+    .from("daily_checkins")
+    .delete()
+    .eq("user_id", user.id)
+    .eq("class_id", classId)
+    .eq("date", date);
+
+  if (checkinError) {
+    return { error: checkinError.message };
+  }
 
   revalidatePath("/dashboard");
   return { error: null };

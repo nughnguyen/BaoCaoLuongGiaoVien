@@ -1,12 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import type { AttendanceLogRow, ClassRow } from "@/lib/types";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CalendarCheck2 } from "lucide-react";
 import ClassForm from "./class-form";
 import ClassList from "./class-list";
+import DashboardNavigationMenu from "./navigation-menu";
+import MonthLogsTable from "./month-logs-table";
 import TodayCheckinCard from "./today-checkin-card";
-import { signOut } from "./actions";
 
 export default async function DashboardPage() {
   const now = new Date();
@@ -45,7 +45,7 @@ export default async function DashboardPage() {
 
   const { data: monthLogsRaw, error: monthError } = await supabase
     .from("attendance_logs")
-    .select("id, date, duration, total_earned, month_key, status, classes (class_name, student_name)")
+    .select("id, class_id, date, duration, total_earned, month_key, status, classes (class_name, student_name)")
     .eq("user_id", user.id)
     .eq("month_key", monthKey)
     .order("date", { ascending: false });
@@ -53,7 +53,11 @@ export default async function DashboardPage() {
   const totalIncome = monthLogs.reduce((sum, row) => sum + Number(row.total_earned), 0);
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-10">
+    <div
+      id="dashboard-top"
+      className="flex w-full flex-col gap-8 pb-10 pl-4 pr-3 pt-16 lg:py-10 lg:pl-70 lg:pr-4"
+    >
+      <DashboardNavigationMenu monthKey={monthKey} />
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div className="clay-card p-5">
           <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
@@ -64,16 +68,6 @@ export default async function DashboardPage() {
             Xin chào{profile?.full_name ? `, ${profile.full_name}` : ""} - tháng {monthKey}
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <Link href={`/api/export/excel?month_key=${monthKey}`} className="clay-btn px-4 py-2 text-sm">
-            Xuất báo cáo tháng
-          </Link>
-          <form action={signOut}>
-            <button type="submit" className="clay-inset px-4 py-2 text-sm text-slate-700">
-              Đăng xuất
-            </button>
-          </form>
-        </div>
       </header>
 
       {monthError && (
@@ -82,17 +76,23 @@ export default async function DashboardPage() {
         </p>
       )}
 
-      <TodayCheckinCard classes={todayClasses} />
-
-      <section className="space-y-4">
-        <h2 className="text-lg font-medium text-cyan-900">Quản lý lớp học</h2>
-        <ClassForm />
-        
-        <h3 className="text-sm font-medium text-zinc-700 mt-6 mb-2">Danh sách các lớp hiện có</h3>
-        <ClassList classes={classes} />
+      <section id="today-reminders">
+        <TodayCheckinCard classes={todayClasses} />
       </section>
 
-      <section className="space-y-3">
+      <section id="class-management" className="space-y-4">
+        <h2 className="text-lg font-medium text-cyan-900">Quản lý lớp học</h2>
+        <div id="class-form">
+          <ClassForm />
+        </div>
+        
+        <h3 className="text-sm font-medium text-zinc-700 mt-6 mb-2">Danh sách các lớp hiện có</h3>
+        <div id="class-list">
+          <ClassList classes={classes} />
+        </div>
+      </section>
+
+      <section id="month-report" className="space-y-3">
         <div className="clay-card flex flex-wrap items-center justify-between gap-3 p-4">
           <h2 className="text-sm font-medium text-zinc-700">Tổng thu nhập tháng hiện tại</h2>
           <span className="text-xl font-semibold text-emerald-900">
@@ -100,42 +100,7 @@ export default async function DashboardPage() {
           </span>
         </div>
 
-        <div className="clay-surface overflow-x-auto p-3">
-          <table className="w-full min-w-[640px] text-left text-sm">
-            <thead className="border-b border-zinc-200 bg-zinc-50">
-              <tr>
-                <th className="px-3 py-2 font-medium text-zinc-700">Ngày</th>
-                <th className="px-3 py-2 font-medium text-zinc-700">Lớp / học viên</th>
-                <th className="px-3 py-2 font-medium text-zinc-700">Giờ</th>
-                <th className="px-3 py-2 font-medium text-zinc-700">Thành tiền</th>
-                <th className="px-3 py-2 font-medium text-zinc-700">Trạng thái</th>
-              </tr>
-            </thead>
-            <tbody>
-              {monthLogs.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-3 py-6 text-center text-zinc-500">
-                    Chưa có log dạy trong tháng hiện tại.
-                  </td>
-                </tr>
-              ) : (
-                monthLogs.map((row) => (
-                  <tr key={row.id} className="border-b border-zinc-100">
-                    <td className="px-3 py-2">{row.date}</td>
-                    <td className="px-3 py-2">
-                      {row.classes?.class_name} - {row.classes?.student_name}
-                    </td>
-                    <td className="px-3 py-2">{row.duration}</td>
-                    <td className="px-3 py-2 font-medium">
-                      {Number(row.total_earned).toLocaleString("vi-VN")} VND
-                    </td>
-                    <td className="px-3 py-2">{row.status}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <MonthLogsTable monthLogs={monthLogs} />
       </section>
     </div>
   );

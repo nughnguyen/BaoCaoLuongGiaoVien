@@ -8,11 +8,13 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "clay-btn",
+        outline: "clay-inset text-slate-700",
         ghost: "clay-inset text-slate-700",
       },
       size: {
         default: "px-4 py-2",
         sm: "px-3 py-1.5",
+        icon: "h-9 w-9 p-0",
       },
     },
     defaultVariants: {
