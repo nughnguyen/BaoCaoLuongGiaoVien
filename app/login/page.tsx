@@ -6,7 +6,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Eye, EyeOff } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -15,11 +17,29 @@ export default function LoginPage() {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+
+  useEffect(() => {
+    const savedEmail = localStorage.getItem("savedLoginEmail");
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
+
+    if (mode === "login") {
+      if (rememberMe) {
+        localStorage.setItem("savedLoginEmail", email);
+      } else {
+        localStorage.removeItem("savedLoginEmail");
+      }
+    }
 
     const payload = new FormData();
     payload.set("email", email);
@@ -128,17 +148,41 @@ export default function LoginPage() {
                     </a>
                   )}
                 </div>
-                <Input
-                  id="password"
-                  type="password"
-                  required
-                  minLength={6}
-                  placeholder={mode === "register" ? "Tối thiểu 6 ký tự" : "••••••••"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete={mode === "register" ? "new-password" : "current-password"}
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    required
+                    minLength={6}
+                    placeholder={mode === "register" ? "Tối thiểu 6 ký tự" : "••••••••"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoComplete={mode === "register" ? "new-password" : "current-password"}
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+                    aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
+
+              {mode === "login" && (
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="remember" 
+                    checked={rememberMe}
+                    onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                  />
+                  <Label htmlFor="remember" className="text-sm font-normal cursor-pointer text-slate-600">
+                    Lưu đăng nhập
+                  </Label>
+                </div>
+              )}
 
               {error && (
                 <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2" role="alert">
