@@ -1,11 +1,55 @@
 "use client";
 
-import { Trash2Icon } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Trash2Icon, ArrowUpDown, ArrowDown, ArrowUp } from "lucide-react";
 import { sonner13, sonner16 } from "@/lib/sonner-presets";
 import { deleteLog } from "./actions";
 import type { AttendanceLogRow } from "@/lib/types";
 
+type SortColumn = "date" | "name" | null;
+type SortDirection = "asc" | "desc";
+
 export default function MonthLogsTable({ monthLogs }: { monthLogs: AttendanceLogRow[] }) {
+  const [sortColumn, setSortColumn] = useState<SortColumn>("date");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+
+  const sortedLogs = useMemo(() => {
+    if (!sortColumn) return monthLogs;
+
+    return [...monthLogs].sort((a, b) => {
+      let comparison = 0;
+      if (sortColumn === "date") {
+        comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
+        if (isNaN(comparison)) {
+            comparison = a.date.localeCompare(b.date);
+        }
+      } else if (sortColumn === "name") {
+        const nameA = `${a.classes?.class_name || ""} ${a.classes?.student_name || ""}`;
+        const nameB = `${b.classes?.class_name || ""} ${b.classes?.student_name || ""}`;
+        comparison = nameA.localeCompare(nameB);
+      }
+      return sortDirection === "asc" ? comparison : -comparison;
+    });
+  }, [monthLogs, sortColumn, sortDirection]);
+
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  };
+
+  const renderSortIcon = (column: SortColumn) => {
+    if (sortColumn !== column) return <ArrowUpDown className="ml-1 inline-block size-3.5 text-zinc-400" />;
+    return sortDirection === "asc" ? (
+      <ArrowUp className="ml-1 inline-block size-3.5 text-sky-600" />
+    ) : (
+      <ArrowDown className="ml-1 inline-block size-3.5 text-sky-600" />
+    );
+  };
+
   async function onDelete(row: AttendanceLogRow) {
     const fd = new FormData();
     fd.set("log_id", row.id);
@@ -24,8 +68,18 @@ export default function MonthLogsTable({ monthLogs }: { monthLogs: AttendanceLog
       <table className="w-full min-w-[740px] text-left text-sm">
         <thead className="border-b border-zinc-200 bg-zinc-50">
           <tr>
-            <th className="px-3 py-2 font-medium text-zinc-700">Ngày</th>
-            <th className="px-3 py-2 font-medium text-zinc-700">Lớp / học viên</th>
+            <th 
+              className="cursor-pointer px-3 py-2 font-medium text-zinc-700 hover:bg-zinc-100 transition-colors select-none"
+              onClick={() => handleSort("date")}
+            >
+              Ngày {renderSortIcon("date")}
+            </th>
+            <th 
+              className="cursor-pointer px-3 py-2 font-medium text-zinc-700 hover:bg-zinc-100 transition-colors select-none"
+              onClick={() => handleSort("name")}
+            >
+              Lớp / học viên {renderSortIcon("name")}
+            </th>
             <th className="px-3 py-2 font-medium text-zinc-700">Giờ</th>
             <th className="px-3 py-2 font-medium text-zinc-700">Thành tiền</th>
             <th className="px-3 py-2 font-medium text-zinc-700">Trạng thái</th>
@@ -40,7 +94,7 @@ export default function MonthLogsTable({ monthLogs }: { monthLogs: AttendanceLog
               </td>
             </tr>
           ) : (
-            monthLogs.map((row) => (
+            sortedLogs.map((row) => (
               <tr key={row.id} className="border-b border-zinc-100">
                 <td className="px-3 py-2">{row.date}</td>
                 <td className="px-3 py-2">
