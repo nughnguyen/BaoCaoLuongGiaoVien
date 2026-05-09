@@ -130,7 +130,7 @@ export async function GET(request: Request) {
       rowIdx++;
     }
 
-    // Apply borders ONLY to M2 and M3 (Summary area)
+    // Apply borders ONLY to M2 and N3 (Summary area)
     const borderStyle: Partial<ExcelJS.Borders> = {
       top: { style: 'thin' as ExcelJS.BorderStyle },
       left: { style: 'thin' as ExcelJS.BorderStyle },
@@ -138,18 +138,22 @@ export async function GET(request: Request) {
       right: { style: 'thin' as ExcelJS.BorderStyle }
     };
 
-    // Clear any existing borders in column M before setting M2, M3
-    sheet.getColumn("M").eachCell?.((cell) => {
-      cell.border = {};
+    // Clear any existing borders in column M and N for rows >= 4
+    sheet.getColumn("M").eachCell?.((cell, rowNum) => {
+      if (rowNum >= 4) cell.border = {};
+    });
+    sheet.getColumn("N").eachCell?.((cell, rowNum) => {
+      if (rowNum >= 4) cell.border = {};
     });
 
     const m2 = sheet.getCell("M2");
-    const m3 = sheet.getCell("M3");
+    const n3 = sheet.getCell("N3");
     
     m2.border = borderStyle;
-    m3.border = borderStyle;
+    n3.border = borderStyle;
 
     // Set M3 value as the calculated branch total and format as currency
+    const m3 = sheet.getCell("M3");
     m3.numFmt = '#,##0"đ"';
     m3.value = branchTotalAmount;
 
@@ -182,10 +186,19 @@ export async function GET(request: Request) {
       const branchSessions = branchMap.get(branchName) || [];
       const branchTotal = branchSessions.reduce((sum, s) => sum + Number(s.total_earned), 0);
       
-      totalSheet.getCell(`B${rowNum}`).value = i + 1; // STT
-      totalSheet.getCell(`C${rowNum}`).value = branchName; // Tên chi nhánh
-      totalSheet.getCell(`D${rowNum}`).value = branchTotal; // Số tiền
-      totalSheet.getCell(`D${rowNum}`).numFmt = currencyFmt;
+      const sttCell = totalSheet.getCell(`B${rowNum}`);
+      const nameCell = totalSheet.getCell(`C${rowNum}`);
+      const amountCell = totalSheet.getCell(`D${rowNum}`);
+
+      sttCell.value = i + 1; // STT
+      sttCell.font = { bold: false };
+
+      nameCell.value = branchName; // Tên chi nhánh
+      nameCell.font = { bold: false };
+
+      amountCell.value = branchTotal; // Số tiền
+      amountCell.numFmt = currencyFmt;
+
       lastBranchRow = rowNum;
     });
 
@@ -205,6 +218,16 @@ export async function GET(request: Request) {
       bankAccNumCell.value = profile.bank_account_number || "";
     }
   }
+
+  // Set file metadata and ensure TOTAL sheet is active on open
+  workbook.creator = "GumballZ";
+  workbook.lastModifiedBy = "GumballZ";
+  workbook.views = [
+    {
+      x: 0, y: 0, width: 10000, height: 20000,
+      firstSheet: 0, activeTab: 0, visibility: 'visible'
+    }
+  ];
 
   const buffer = await workbook.xlsx.writeBuffer();
   const filename = customFilename ? `${customFilename}.xlsx` : `Bao-cao-luong-${monthKey}.xlsx`;
