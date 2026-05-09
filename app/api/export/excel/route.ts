@@ -136,6 +136,11 @@ export async function GET(request: Request) {
       right: { style: 'thin' as ExcelJS.BorderStyle }
     };
 
+    // Clear any existing borders in column M before setting M2, M3
+    sheet.getColumn("M").eachCell?.((cell) => {
+      cell.border = {};
+    });
+
     const m2 = sheet.getCell("M2");
     const m3 = sheet.getCell("M3");
     
@@ -165,12 +170,37 @@ export async function GET(request: Request) {
   }
 
   if (totalSheet) {
-    totalSheet.getCell("D2").value = grandTotal;
-    // Fill bank info
+    // Fill branch summary in TOTAL sheet
+    const branches = Array.from(branchMap.keys());
+    const currencyFmt = '#,##0"đ"';
+    let lastBranchRow = 1; // Assuming row 1 is header
+
+    branches.forEach((branchName, i) => {
+      const rowNum = 2 + i;
+      const branchSessions = branchMap.get(branchName) || [];
+      const branchTotal = branchSessions.reduce((sum, s) => sum + Number(s.total_earned), 0);
+      
+      totalSheet.getCell(`B${rowNum}`).value = i + 1; // STT
+      totalSheet.getCell(`C${rowNum}`).value = branchName; // Tên chi nhánh
+      totalSheet.getCell(`D${rowNum}`).value = branchTotal; // Số tiền
+      totalSheet.getCell(`D${rowNum}`).numFmt = currencyFmt;
+      lastBranchRow = rowNum;
+    });
+
+    // Grand total in E2
+    totalSheet.getCell("E2").value = grandTotal;
+    totalSheet.getCell("E2").numFmt = currencyFmt;
+
+    // Fill bank info, spaced 1 row after the last branch
     if (profile) {
-      totalSheet.getCell("D8").value = profile.bank_name || "";
-      totalSheet.getCell("D9").value = profile.bank_account_name || "";
-      totalSheet.getCell("D10").value = profile.bank_account_number || "";
+      const bankStartRow = lastBranchRow + 2;
+      const bankNameCell = totalSheet.getCell(`D${bankStartRow}`);
+      const bankAccNameCell = totalSheet.getCell(`D${bankStartRow + 1}`);
+      const bankAccNumCell = totalSheet.getCell(`D${bankStartRow + 2}`);
+
+      bankNameCell.value = profile.bank_name || "";
+      bankAccNameCell.value = profile.bank_account_name || "";
+      bankAccNumCell.value = profile.bank_account_number || "";
     }
   }
 
