@@ -132,7 +132,7 @@ export async function GET(request: Request) {
       rowIdx++;
     }
 
-    // Apply borders ONLY to M2 and N3 (Summary area)
+    // Apply borders ONLY to M2 and M3 (Summary area)
     const borderStyle: Partial<ExcelJS.Borders> = {
       top: { style: 'thin' as ExcelJS.BorderStyle },
       left: { style: 'thin' as ExcelJS.BorderStyle },
@@ -140,27 +140,24 @@ export async function GET(request: Request) {
       right: { style: 'thin' as ExcelJS.BorderStyle }
     };
 
-    // Clear any existing borders in column M and N for rows >= 4
-    sheet.getColumn("M").eachCell?.((cell, rowNum) => {
-      if (rowNum >= 4) cell.border = {};
-    });
-    sheet.getColumn("N").eachCell?.((cell, rowNum) => {
-      if (rowNum >= 4) cell.border = {};
+    // Clear borders for columns L to R for all rows first
+    ["L", "M", "N", "O", "P", "Q", "R"].forEach(col => {
+      sheet.getColumn(col).eachCell?.((cell) => {
+        cell.border = {};
+      });
     });
 
     const m2 = sheet.getCell("M2");
-    const n3 = sheet.getCell("N3");
+    const m3 = sheet.getCell("M3");
     
     m2.border = borderStyle;
     m2.font = defaultFont;
-    n3.border = borderStyle;
-    n3.font = defaultFont;
+    m3.border = borderStyle;
+    m3.font = defaultFont;
 
     // Set M3 value as the calculated branch total and format as currency
-    const m3 = sheet.getCell("M3");
     m3.numFmt = '#,##0"đ"';
     m3.value = branchTotalAmount;
-    m3.font = defaultFont;
 
     // Auto-fit columns (approximation)
     sheet.columns.forEach(column => {
@@ -181,6 +178,29 @@ export async function GET(request: Request) {
   }
 
   if (totalSheet) {
+    const borderStyle: Partial<ExcelJS.Borders> = {
+      top: { style: 'thin' as ExcelJS.BorderStyle },
+      left: { style: 'thin' as ExcelJS.BorderStyle },
+      bottom: { style: 'thin' as ExcelJS.BorderStyle },
+      right: { style: 'thin' as ExcelJS.BorderStyle }
+    };
+
+    // Clear A1, A2 borders
+    totalSheet.getCell("A1").border = {};
+    totalSheet.getCell("A2").border = {};
+
+    // Borders for B1, C1, D1, E2, E3
+    ["B1", "C1", "D1", "E2", "E3"].forEach(cellId => {
+      totalSheet.getCell(cellId).border = borderStyle;
+    });
+
+    // Borders for B15:D17
+    for (let r = 15; r <= 17; r++) {
+      ["B", "C", "D"].forEach(col => {
+        totalSheet.getCell(`${col}${r}`).border = borderStyle;
+      });
+    }
+
     // Fill branch summary in TOTAL sheet
     const branches = Array.from(branchMap.keys());
     const currencyFmt = '#,##0"đ"';
@@ -209,11 +229,11 @@ export async function GET(request: Request) {
       lastBranchRow = rowNum;
     });
 
-    // Grand total in E2
+    // Grand total in E2 with special color and bold font
     const grandTotalCell = totalSheet.getCell("E2");
     grandTotalCell.value = grandTotal;
     grandTotalCell.numFmt = currencyFmt;
-    grandTotalCell.font = defaultFontTotal;
+    grandTotalCell.font = { ...defaultFontTotal, bold: true, color: { argb: 'FF0070C0' } }; // Royal Blue
 
     // Fill bank info, spaced 1 row after the last branch
     if (profile) {
