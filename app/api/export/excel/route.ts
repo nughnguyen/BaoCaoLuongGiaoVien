@@ -190,8 +190,8 @@ export async function GET(request: Request) {
     totalSheet.getCell("A1").border = {};
     totalSheet.getCell("A2").border = {};
 
-    // Borders for B1, C1, D1, E2, E3
-    ["B1", "C1", "D1", "E2", "E3"].forEach(cellId => {
+    // Borders for B1, C1, D1, E2
+    ["B1", "C1", "D1", "E2"].forEach(cellId => {
       totalSheet.getCell(cellId).border = borderStyle;
     });
 
