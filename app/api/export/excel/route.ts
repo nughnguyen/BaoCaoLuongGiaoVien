@@ -140,9 +140,10 @@ export async function GET(request: Request) {
       right: { style: 'thin' as ExcelJS.BorderStyle }
     };
 
-    // Clear borders for columns L to R for all rows first
+    // Clear borders for columns L to R for all rows (including empty ones)
     ["L", "M", "N", "O", "P", "Q", "R"].forEach(col => {
-      sheet.getColumn(col).eachCell?.((cell) => {
+      const column = sheet.getColumn(col);
+      column.eachCell?.({ includeEmpty: true }, (cell) => {
         cell.border = {};
       });
     });
