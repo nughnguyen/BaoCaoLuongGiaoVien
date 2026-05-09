@@ -7,6 +7,7 @@ import ClassList from "./class-list";
 import DashboardNavigationMenu from "./navigation-menu";
 import MonthLogsTable from "./month-logs-table";
 import TodayCheckinCard from "./today-checkin-card";
+import NotificationButton from "./notification-button";
 
 export default async function DashboardPage() {
   const now = new Date();
@@ -22,51 +23,66 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name")
+    .select("full_name, bank_name, bank_account_name, bank_account_number")
     .eq("id", user.id)
     .single();
 
   const { data: classesRaw } = await supabase
     .from("classes")
-    .select("id, class_name, student_name, hourly_rate, schedule, schedule_details, program_details, teacher_name")
+    .select("id, class_name, student_name, hourly_rate, schedule, schedule_details, program_details, teacher_name, branch_name, student_count")
     .eq("user_id", user.id)
     .order("class_name");
   const classes = (classesRaw ?? []) as ClassRow[];
 
-  const { data: todayCheckins } = await supabase
-    .from("daily_checkins")
-    .select("class_id")
-    .eq("user_id", user.id)
-    .eq("date", todayIso);
-  const doneClassIds = new Set((todayCheckins ?? []).map((i) => i.class_id));
-  const todayClasses = classes.filter(
-    (item) => item.schedule.includes(day) && !doneClassIds.has(item.id),
-  );
-
   const { data: monthLogsRaw, error: monthError } = await supabase
     .from("attendance_logs")
-    .select("id, class_id, date, duration, total_earned, month_key, status, classes (class_name, student_name)")
+    .select("id, class_id, date, duration, total_earned, month_key, status, classes (class_name, student_name, branch_name, student_count)")
     .eq("user_id", user.id)
     .eq("month_key", monthKey)
     .order("date", { ascending: false });
   const monthLogs = (monthLogsRaw ?? []) as unknown as AttendanceLogRow[];
   const totalIncome = monthLogs.reduce((sum, row) => sum + Number(row.total_earned), 0);
 
+  // Logic nhắc nhở 7 ngày gần nhất
+  const pendingSessions: { class: ClassRow; dateIso: string }[] = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const dIso = d.toISOString().slice(0, 10);
+    const dDay = d.getDay();
+
+    const { data: checkins } = await supabase
+      .from("daily_checkins")
+      .select("class_id")
+      .eq("user_id", user.id)
+      .eq("date", dIso);
+    
+    const checkedInIds = new Set((checkins ?? []).map(c => c.class_id));
+    
+    const missing = classes.filter(c => c.schedule.includes(dDay) && !checkedInIds.has(c.id));
+    missing.forEach(c => pendingSessions.push({ class: c, dateIso: dIso }));
+  }
+
+  const userName = profile?.full_name || user.user_metadata?.full_name || "Giáo viên";
+
   return (
     <div
       id="dashboard-top"
       className="flex w-full flex-col gap-8 pb-10 pl-4 pr-3 pt-16 lg:py-10 lg:pl-70 lg:pr-4"
     >
-      <DashboardNavigationMenu monthKey={monthKey} />
+      <DashboardNavigationMenu monthKey={monthKey} profile={profile || { full_name: user.user_metadata?.full_name || "Giáo viên", id: user.id, role: "teacher" }} />
       <header className="flex flex-wrap items-center justify-between gap-4">
-        <div className="clay-card p-5">
+        <div className="clay-card p-5 flex-1 min-w-[300px]">
           <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
             <CalendarCheck2 className="h-6 w-6 text-emerald-700" />
-            Smart Teaching Log
+            {userName}
           </h1>
           <p className="text-sm text-slate-600">
-            Xin chào{profile?.full_name ? `, ${profile.full_name}` : ""} - tháng {monthKey}
+            Báo cáo lương - tháng {monthKey}
           </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <NotificationButton pendingSessions={pendingSessions} />
         </div>
       </header>
 
@@ -77,7 +93,7 @@ export default async function DashboardPage() {
       )}
 
       <section id="today-reminders">
-        <TodayCheckinCard classes={todayClasses} />
+        <TodayCheckinCard pendingSessions={pendingSessions} />
       </section>
 
       <section id="class-management" className="space-y-4">

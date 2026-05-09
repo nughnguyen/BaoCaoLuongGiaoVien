@@ -1,12 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
 import ExcelJS from "exceljs";
 import { NextResponse } from "next/server";
+import path from "path";
 
 export const runtime = "nodejs";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const monthKey = searchParams.get("month_key");
+  const customFilename = searchParams.get("filename");
 
   if (!monthKey) {
     return NextResponse.json(
@@ -23,9 +25,16 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Fetch profile for bank info
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name, bank_name, bank_account_name, bank_account_number")
+    .eq("id", user.id)
+    .single();
+
   const { data: rows, error } = await supabase
     .from("attendance_logs")
-    .select("date, duration, total_earned, status, classes (class_name, student_name, teacher_name)")
+    .select("date, duration, total_earned, status, classes (class_name, student_name, teacher_name, branch_name, student_count, program_details, schedule_details)")
     .eq("user_id", user.id)
     .eq("month_key", monthKey)
     .order("date", { ascending: true });
@@ -39,107 +48,140 @@ export async function GET(request: Request) {
     duration: number;
     total_earned: number;
     status: string;
-    classes: { class_name: string; student_name: string; teacher_name: string } | null;
+    classes: { 
+      class_name: string; 
+      student_name: string; 
+      teacher_name: string;
+      branch_name: string;
+      student_count: number;
+      program_details: string | null;
+      schedule_details: any[];
+    } | null;
   };
 
   const sessions = (rows ?? []) as unknown as ExportRow[];
 
-  // Group sessions by class
-  const sessionsByClass = new Map<string, ExportRow[]>();
-  for (const s of sessions) {
-    const key = `${s.classes?.class_name ?? "Khác"} - ${s.classes?.student_name ?? ""}`;
-    if (!sessionsByClass.has(key)) {
-      sessionsByClass.set(key, []);
-    }
-    sessionsByClass.get(key)!.push(s);
+  const workbook = new ExcelJS.Workbook();
+  const templatePath = path.join(process.cwd(), "public", "ExcelTemplate", "[TÊN TRUNG TÂM] - [TÊN GIÁO VIÊN] - BÁO CÁO LƯƠNG THÁNG [THÁNG].[NĂM].xlsx");
+  
+  try {
+    await workbook.xlsx.readFile(templatePath);
+  } catch (err) {
+    console.error("Error reading template:", err);
+    return NextResponse.json({ error: "Không tìm thấy file mẫu Excel." }, { status: 500 });
   }
 
-  const workbook = new ExcelJS.Workbook();
-  workbook.creator = "Bao-cao-luong";
-  const sheet = workbook.addWorksheet("Ca day", {
-    views: [{ state: "frozen", ySplit: 1 }],
-  });
+  const templateSheet = workbook.getWorksheet("TÊN CHI NHÁNH") || workbook.getWorksheet(2);
+  const totalSheet = workbook.getWorksheet("TOTAL") || workbook.getWorksheet(1);
 
-  sheet.columns = [
-    { header: "Ngày", key: "session_date", width: 12 },
-    { header: "Lớp", key: "class_name", width: 20 },
-    { header: "Học viên", key: "student_name", width: 20 },
-    { header: "Giờ", key: "hours", width: 8 },
-    { header: "Thành tiền", key: "amount", width: 16 },
-    { header: "Trạng thái", key: "status", width: 14 },
-  ];
-
-  const headerRow = sheet.getRow(1);
-  headerRow.font = { bold: true };
-  headerRow.alignment = { vertical: "middle" };
+  // Group by branch
+  const branchMap = new Map<string, ExportRow[]>();
+  for (const s of sessions) {
+    const bName = s.classes?.branch_name || "Cơ bản";
+    if (!branchMap.has(bName)) branchMap.set(bName, []);
+    branchMap.get(bName)!.push(s);
+  }
 
   let grandTotal = 0;
 
-  for (const [classKey, classSessions] of sessionsByClass.entries()) {
-    // Lấy thông tin giáo viên từ buổi đầu tiên của lớp
-    const teacherName = classSessions[0]?.classes?.teacher_name ?? "Giáo viên";
-    
-    // Header dòng lớp
-    const classHeader = sheet.addRow({
-      session_date: `Lớp: ${classKey}`,
-      class_name: `GV: ${teacherName}`,
-      student_name: "",
-      hours: "",
-      amount: "",
-      status: "",
-    });
-    classHeader.font = { bold: true, color: { argb: "FF0070C0" } };
-    sheet.mergeCells(`A${classHeader.number}:C${classHeader.number}`);
+  for (const [branchName, branchSessions] of branchMap.entries()) {
+    if (!templateSheet) continue;
 
-    let classTotal = 0;
-    for (const s of classSessions) {
-      const lineAmount = Number(s.total_earned);
-      classTotal += lineAmount;
+    const sheet = workbook.addWorksheet(branchName);
+    const templateModel = JSON.parse(JSON.stringify(templateSheet.model));
+    templateModel.name = branchName;
+    templateModel.id = sheet.id;
+    sheet.model = templateModel;
 
-      sheet.addRow({
-        session_date: s.date,
-        class_name: s.classes?.class_name ?? "",
-        student_name: s.classes?.student_name ?? "",
-        hours: Number(s.duration),
-        amount: lineAmount,
-        status: s.status,
-      });
+    const sampleRow = templateSheet.getRow(2);
+
+    let rowIdx = 2;
+    for (const s of branchSessions) {
+      const date = new Date(s.date);
+      const row = sheet.getRow(rowIdx);
+      
+      if (rowIdx > 2) {
+        sampleRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+          row.getCell(colNumber).style = cell.style;
+        });
+      }
+
+      // Find time slot for this day
+      const dayOfWeek = date.getDay();
+      const sched = s.classes?.schedule_details?.find(d => d.day === dayOfWeek);
+      const timeSlot = sched ? `${sched.start_time} - ${sched.end_time}` : "";
+
+      row.getCell(1).value = date.getDate();
+      row.getCell(2).value = date.getMonth() + 1;
+      row.getCell(3).value = date.getFullYear();
+      row.getCell(4).value = timeSlot; 
+      row.getCell(5).value = s.classes?.teacher_name ?? "";
+      row.getCell(6).value = s.classes?.student_count ?? 1;
+      row.getCell(7).value = s.classes?.student_name ?? "";
+      row.getCell(8).value = s.classes?.class_name ?? ""; 
+      row.getCell(9).value = Number(s.duration);
+      row.getCell(10).value = s.classes ? (Number(s.total_earned) / Number(s.duration)) : 0;
+      row.getCell(11).value = Number(s.total_earned);
+      
+      grandTotal += Number(s.total_earned);
+      row.commit();
+      rowIdx++;
     }
 
-    grandTotal += classTotal;
+    // Apply borders ONLY to M2 and M3 (Summary area)
+    const borderStyle: Partial<ExcelJS.Border> = {
+      top: { style: 'thin' as ExcelJS.BorderStyle },
+      left: { style: 'thin' as ExcelJS.BorderStyle },
+      bottom: { style: 'thin' as ExcelJS.BorderStyle },
+      right: { style: 'thin' as ExcelJS.BorderStyle }
+    };
 
-    const classSumRow = sheet.addRow({
-      session_date: "Tổng lớp",
-      class_name: "",
-      hours: "",
-      student_name: "",
-      amount: classTotal,
-      status: "",
+    const m2 = sheet.getCell("M2");
+    const m3 = sheet.getCell("M3");
+    
+    m2.border = borderStyle;
+    m3.border = borderStyle;
+
+    // Format M3 as currency
+    m3.numFmt = '#,##0"đ"';
+    m3.value = { formula: `SUM(K2:K${rowIdx - 1})` };
+
+    // Auto-fit columns (approximation)
+    sheet.columns.forEach(column => {
+      let maxColumnLength = 0;
+      column.eachCell?.({ includeEmpty: true }, (cell) => {
+        const columnLength = cell.value ? cell.value.toString().length : 0;
+        if (columnLength > maxColumnLength) {
+          maxColumnLength = columnLength;
+        }
+      });
+      column.width = maxColumnLength < 10 ? 10 : maxColumnLength + 2;
     });
-    classSumRow.font = { italic: true, bold: true };
-    sheet.addRow({}); // Dòng trống ngăn cách
   }
 
-  const grandSumRow = sheet.addRow({
-    session_date: "TỔNG CỘNG TẤT CẢ",
-    class_name: "",
-    hours: "",
-    student_name: "",
-    amount: grandTotal,
-    status: "",
-  });
-  grandSumRow.font = { bold: true, size: 12, color: { argb: "FFFF0000" } };
+  // Remove the template sheet itself after cloning all needed sheets
+  if (templateSheet && branchMap.size > 0) {
+    workbook.removeWorksheet(templateSheet.id);
+  }
+
+  if (totalSheet) {
+    totalSheet.getCell("D2").value = grandTotal;
+    // Fill bank info
+    if (profile) {
+      totalSheet.getCell("D8").value = profile.bank_name || "";
+      totalSheet.getCell("D9").value = profile.bank_account_name || "";
+      totalSheet.getCell("D10").value = profile.bank_account_number || "";
+    }
+  }
 
   const buffer = await workbook.xlsx.writeBuffer();
-
-  const filename = `bao-cao-thang_${monthKey}.xlsx`;
+  const filename = customFilename ? `${customFilename}.xlsx` : `Bao-cao-luong-${monthKey}.xlsx`;
 
   return new NextResponse(buffer, {
     status: 200,
     headers: {
-      "Content-Type":
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "Content-Disposition": `attachment; filename="${filename}"`,
+      "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "Content-Disposition": `attachment; filename="${encodeURIComponent(filename)}"`,
     },
   });
 }

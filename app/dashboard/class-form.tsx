@@ -95,6 +95,27 @@ export default function ClassForm() {
           className="clay-inset px-3 py-2 outline-none"
         />
       </label>
+      <label className="flex min-w-[100px] flex-col gap-1 text-sm">
+        Số lượng HV
+        <input
+          name="student_count"
+          type="number"
+          min={1}
+          defaultValue={1}
+          required
+          className="clay-inset px-3 py-2 outline-none"
+        />
+      </label>
+      <label className="flex min-w-[190px] flex-col gap-1 text-sm">
+        Chi nhánh
+        <input
+          name="branch_name"
+          required
+          defaultValue="Cơ bản"
+          placeholder="Cơ bản, Chi nhánh 1..."
+          className="clay-inset px-3 py-2 outline-none"
+        />
+      </label>
       <label className="flex min-w-[190px] flex-col gap-1 text-sm">
         Lương / giờ (số)
         <input

@@ -60,6 +60,16 @@ export default function ClassList({ classes }: { classes: ClassRow[] }) {
       meta: { filterVariant: "text" },
     },
     {
+      header: "Chi nhánh",
+      accessorKey: "branch_name",
+      cell: ({ row }) => (
+        <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200">
+          {row.getValue("branch_name") || "Cơ bản"}
+        </Badge>
+      ),
+      meta: { filterVariant: "text" },
+    },
+    {
       header: "Lương/giờ",
       accessorKey: "hourly_rate",
       cell: ({ row }) => (
@@ -317,7 +327,7 @@ function EditPanel({ cls, onClose }: { cls: ClassRow; onClose: () => void }) {
 
       <input type="hidden" name="id" value={cls.id} />
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
         <div className="grid gap-1">
           <Label className="text-xs">Tên lớp</Label>
           <Input name="class_name" defaultValue={cls.class_name} required className="h-8 text-sm" />
@@ -325,6 +335,14 @@ function EditPanel({ cls, onClose }: { cls: ClassRow; onClose: () => void }) {
         <div className="grid gap-1">
           <Label className="text-xs">Học viên</Label>
           <Input name="student_name" defaultValue={cls.student_name} required className="h-8 text-sm" />
+        </div>
+        <div className="grid gap-1">
+          <Label className="text-xs">Số lượng HV</Label>
+          <Input name="student_count" type="number" min={1} defaultValue={cls.student_count ?? 1} required className="h-8 text-sm" />
+        </div>
+        <div className="grid gap-1">
+          <Label className="text-xs">Chi nhánh</Label>
+          <Input name="branch_name" defaultValue={cls.branch_name ?? "Cơ bản"} required className="h-8 text-sm" />
         </div>
         <div className="grid gap-1">
           <Label className="text-xs">Giáo viên</Label>

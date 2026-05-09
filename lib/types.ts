@@ -2,6 +2,9 @@ export type Profile = {
   id: string;
   full_name: string | null;
   role: "admin" | "teacher";
+  bank_name?: string;
+  bank_account_name?: string;
+  bank_account_number?: string;
 };
 
 export type ScheduleDetail = {
@@ -20,6 +23,8 @@ export type ClassRow = {
   schedule_details: ScheduleDetail[];
   program_details: string | null;
   teacher_name: string;
+  student_count: number;
+  branch_name: string;
 };
 
 export type AttendanceLogRow = {

@@ -98,7 +98,10 @@ export default function MonthLogsTable({ monthLogs }: { monthLogs: AttendanceLog
               <tr key={row.id} className="border-b border-zinc-100">
                 <td className="px-3 py-2">{row.date}</td>
                 <td className="px-3 py-2">
-                  {row.classes?.class_name} - {row.classes?.student_name}
+                  <div className="flex flex-col">
+                    <span className="font-medium text-zinc-900">{row.classes?.class_name} - {row.classes?.student_name}</span>
+                    <span className="text-[10px] text-zinc-400 uppercase tracking-wider">{row.classes?.branch_name || "Cơ bản"}</span>
+                  </div>
                 </td>
                 <td className="px-3 py-2">{row.duration}</td>
                 <td className="px-3 py-2 font-medium">

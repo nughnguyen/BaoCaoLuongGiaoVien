@@ -1,16 +1,15 @@
 "use client";
 
-import { loginWithPassword, registerWithPassword } from "@/app/login/actions";
+import { loginWithPassword, registerWithPassword } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
-export default function LoginPage() {
+export default function AuthForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -59,7 +58,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-slate-50/50">
       <div className="w-full max-w-md flex flex-col gap-6">
         {/* Brand header */}
         <div className="text-center">
@@ -150,24 +149,24 @@ export default function LoginPage() {
                 </div>
                 <div className="relative">
                   <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    required
-                    minLength={6}
-                    placeholder={mode === "register" ? "Tối thiểu 6 ký tự" : "••••••••"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    autoComplete={mode === "register" ? "new-password" : "current-password"}
-                    className="pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
-                    aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
+                     id="password"
+                     type={showPassword ? "text" : "password"}
+                     required
+                     minLength={6}
+                     placeholder={mode === "register" ? "Tối thiểu 6 ký tự" : "••••••••"}
+                     value={password}
+                     onChange={(e) => setPassword(e.target.value)}
+                     autoComplete={mode === "register" ? "new-password" : "current-password"}
+                     className="pr-10"
+                   />
+                   <button
+                     type="button"
+                     onClick={() => setShowPassword(!showPassword)}
+                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+                     aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                   >
+                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                   </button>
                 </div>
               </div>
 
@@ -214,12 +213,6 @@ export default function LoginPage() {
             </p>
           </CardFooter>
         </Card>
-
-        <p className="text-center text-xs text-slate-400">
-          <Link href="/" className="text-cyan-600 hover:underline">
-            ← Về trang chủ
-          </Link>
-        </p>
       </div>
     </div>
   );

@@ -15,11 +15,14 @@ import {
   MenuIcon,
   type LucideProps,
   SchoolIcon,
+  UserIcon,
 } from "lucide-react";
 import { signOut } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import AccountFormPopup from "./account-form";
+import type { Profile } from "@/lib/types";
 
 type Item = {
   name: string;
@@ -80,7 +83,7 @@ function NavigationItem({
   );
 }
 
-export default function DashboardNavigationMenu({ monthKey }: { monthKey: string }) {
+export default function DashboardNavigationMenu({ monthKey, profile }: { monthKey: string; profile: Profile }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const closeMobileMenu = () => setMobileOpen(false);
 
@@ -97,20 +100,34 @@ export default function DashboardNavigationMenu({ monthKey }: { monthKey: string
             <SheetHeader>
               <SheetTitle>Điều hướng</SheetTitle>
             </SheetHeader>
-            <SidebarContent monthKey={monthKey} onNavigate={closeMobileMenu} />
+            <SidebarContent monthKey={monthKey} profile={profile} onNavigate={closeMobileMenu} />
           </SheetContent>
         </Sheet>
       </div>
 
       <aside className="fixed left-0 top-0 z-40 hidden h-full w-64 border-r border-cyan-100 bg-white/95 p-4 pt-6 shadow-xl lg:block">
         <p className="mb-3 text-base font-semibold text-cyan-900">Điều hướng</p>
-        <SidebarContent monthKey={monthKey} />
+        <SidebarContent monthKey={monthKey} profile={profile} />
       </aside>
     </>
   );
 }
 
-function SidebarContent({ monthKey, onNavigate }: { monthKey: string; onNavigate?: () => void }) {
+function SidebarContent({ monthKey, profile, onNavigate }: { monthKey: string; profile: Profile; onNavigate?: () => void }) {
+  const [showAccount, setShowAccount] = useState(false);
+
+  const handleExport = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const defaultFilename = `Bao-cao-luong-${monthKey}`;
+    const filename = window.prompt("Nhập tên file muốn lưu (không cần .xlsx):", defaultFilename);
+    
+    if (filename === null) return; // User cancelled
+    
+    const finalFilename = filename.trim() || defaultFilename;
+    window.location.href = `/api/export/excel?month_key=${monthKey}&filename=${encodeURIComponent(finalFilename)}`;
+    onNavigate?.();
+  };
+
   return (
     <>
       <div className="flex flex-col gap-2.5 p-1">
@@ -119,14 +136,23 @@ function SidebarContent({ monthKey, onNavigate }: { monthKey: string; onNavigate
         ))}
       </div>
       <div className="mt-6 border-t border-cyan-100 pt-4">
-        <Link
-          href={`/api/export/excel?month_key=${monthKey}`}
-          onClick={onNavigate}
+        <button
+          onClick={() => {
+            setShowAccount(true);
+            onNavigate?.();
+          }}
+          className="mb-2 inline-flex w-full items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100"
+        >
+          <UserIcon className="size-4" />
+          Tài khoản
+        </button>
+        <button
+          onClick={handleExport}
           className="mb-2 inline-flex w-full items-center gap-2 rounded-xl bg-cyan-50 px-3 py-2 text-sm font-medium text-cyan-800 hover:bg-cyan-100"
         >
           <DownloadIcon className="size-4" />
           Xuất báo cáo tháng
-        </Link>
+        </button>
         <form action={signOut}>
           <button
             type="submit"
@@ -138,6 +164,12 @@ function SidebarContent({ monthKey, onNavigate }: { monthKey: string; onNavigate
           </button>
         </form>
       </div>
+
+      <AccountFormPopup
+        open={showAccount}
+        onOpenChange={setShowAccount}
+        profile={profile}
+      />
     </>
   );
 }
