@@ -311,16 +311,17 @@ export async function updateProfile(formData: FormData): Promise<ActionResult> {
 
   if (error) return { error: error.message };
 
-  // Update profiles table including bank details
+  // Use upsert to ensure the profile row exists
   const { error: pError } = await supabase
     .from("profiles")
-    .update({ 
+    .upsert({ 
+      id: user.id,
       full_name: fullName,
       bank_name: bankName,
       bank_account_name: bankAccountName,
-      bank_account_number: bankAccountNumber
-    })
-    .eq("id", user.id);
+      bank_account_number: bankAccountNumber,
+      updated_at: new Date().toISOString(),
+    });
 
   if (pError) return { error: pError.message };
 

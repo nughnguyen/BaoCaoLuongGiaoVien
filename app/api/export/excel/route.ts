@@ -95,6 +95,8 @@ export async function GET(request: Request) {
 
     const sampleRow = templateSheet.getRow(2);
 
+    const defaultFont: Partial<ExcelJS.Font> = { name: 'Tahoma' };
+
     let branchTotalAmount = 0;
     let rowIdx = 2;
     for (const s of branchSessions) {
@@ -112,17 +114,17 @@ export async function GET(request: Request) {
       const sched = s.classes?.schedule_details?.find(d => d.day === dayOfWeek);
       const timeSlot = sched ? `${sched.start_time} - ${sched.end_time}` : "";
 
-      row.getCell(1).value = date.getDate();
-      row.getCell(2).value = date.getMonth() + 1;
-      row.getCell(3).value = date.getFullYear();
-      row.getCell(4).value = timeSlot; 
-      row.getCell(5).value = s.classes?.teacher_name ?? "";
-      row.getCell(6).value = s.classes?.student_count ?? 1;
-      row.getCell(7).value = s.classes?.student_name ?? "";
-      row.getCell(8).value = s.classes?.class_name ?? ""; 
-      row.getCell(9).value = Number(s.duration);
-      row.getCell(10).value = s.classes ? (Number(s.total_earned) / Number(s.duration)) : 0;
-      row.getCell(11).value = Number(s.total_earned);
+      const c1 = row.getCell(1); c1.value = date.getDate(); c1.font = defaultFont;
+      const c2 = row.getCell(2); c2.value = date.getMonth() + 1; c2.font = defaultFont;
+      const c3 = row.getCell(3); c3.value = date.getFullYear(); c3.font = defaultFont;
+      const c4 = row.getCell(4); c4.value = timeSlot; c4.font = defaultFont;
+      const c5 = row.getCell(5); c5.value = s.classes?.teacher_name ?? ""; c5.font = defaultFont;
+      const c6 = row.getCell(6); c6.value = s.classes?.student_count ?? 1; c6.font = defaultFont;
+      const c7 = row.getCell(7); c7.value = s.classes?.student_name ?? ""; c7.font = defaultFont;
+      const c8 = row.getCell(8); c8.value = s.classes?.class_name ?? ""; c8.font = defaultFont;
+      const c9 = row.getCell(9); c9.value = Number(s.duration); c9.font = defaultFont;
+      const c10 = row.getCell(10); c10.value = s.classes ? (Number(s.total_earned) / Number(s.duration)) : 0; c10.font = defaultFont;
+      const c11 = row.getCell(11); c11.value = Number(s.total_earned); c11.font = defaultFont;
       
       branchTotalAmount += Number(s.total_earned);
       grandTotal += Number(s.total_earned);
@@ -150,12 +152,15 @@ export async function GET(request: Request) {
     const n3 = sheet.getCell("N3");
     
     m2.border = borderStyle;
+    m2.font = defaultFont;
     n3.border = borderStyle;
+    n3.font = defaultFont;
 
     // Set M3 value as the calculated branch total and format as currency
     const m3 = sheet.getCell("M3");
     m3.numFmt = '#,##0"đ"';
     m3.value = branchTotalAmount;
+    m3.font = defaultFont;
 
     // Auto-fit columns (approximation)
     sheet.columns.forEach(column => {
@@ -180,6 +185,7 @@ export async function GET(request: Request) {
     const branches = Array.from(branchMap.keys());
     const currencyFmt = '#,##0"đ"';
     let lastBranchRow = 1; // Assuming row 1 is header
+    const defaultFontTotal: Partial<ExcelJS.Font> = { name: 'Tahoma' };
 
     branches.forEach((branchName, i) => {
       const rowNum = 2 + i;
@@ -191,20 +197,23 @@ export async function GET(request: Request) {
       const amountCell = totalSheet.getCell(`D${rowNum}`);
 
       sttCell.value = i + 1; // STT
-      sttCell.font = { bold: false };
+      sttCell.font = { ...defaultFontTotal, bold: false };
 
       nameCell.value = branchName; // Tên chi nhánh
-      nameCell.font = { bold: false };
+      nameCell.font = { ...defaultFontTotal, bold: false };
 
       amountCell.value = branchTotal; // Số tiền
       amountCell.numFmt = currencyFmt;
+      amountCell.font = defaultFontTotal;
 
       lastBranchRow = rowNum;
     });
 
     // Grand total in E2
-    totalSheet.getCell("E2").value = grandTotal;
-    totalSheet.getCell("E2").numFmt = currencyFmt;
+    const grandTotalCell = totalSheet.getCell("E2");
+    grandTotalCell.value = grandTotal;
+    grandTotalCell.numFmt = currencyFmt;
+    grandTotalCell.font = defaultFontTotal;
 
     // Fill bank info, spaced 1 row after the last branch
     if (profile) {
@@ -214,8 +223,13 @@ export async function GET(request: Request) {
       const bankAccNumCell = totalSheet.getCell(`D${bankStartRow + 2}`);
 
       bankNameCell.value = profile.bank_name || "";
+      bankNameCell.font = defaultFontTotal;
+
       bankAccNameCell.value = profile.bank_account_name || "";
+      bankAccNameCell.font = defaultFontTotal;
+
       bankAccNumCell.value = profile.bank_account_number || "";
+      bankAccNumCell.font = defaultFontTotal;
     }
   }
 

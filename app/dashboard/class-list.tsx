@@ -452,10 +452,23 @@ function EditPanel({ cls, onClose }: { cls: ClassRow; onClose: () => void }) {
 /* ── Manual Log Panel ────────────────────────────────────────── */
 function ManualLogPanel({ classId, onClose }: { classId: string; onClose: () => void }) {
   const [date, setDate] = useState("");
-  const [duration, setDuration] = useState("");
+  const [startTime, setStartTime] = useState("08:00");
+  const [endTime, setEndTime] = useState("10:00");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  // Calculate duration whenever startTime or endTime changes
+  const calculateDuration = () => {
+    const [h1, m1] = startTime.split(":").map(Number);
+    const [h2, m2] = endTime.split(":").map(Number);
+    if (isNaN(h1) || isNaN(h2)) return 0;
+    let diff = (h2 + m2 / 60) - (h1 + m1 / 60);
+    if (diff < 0) diff += 24;
+    return Math.round(diff * 100) / 100;
+  };
+
+  const duration = calculateDuration();
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -465,7 +478,7 @@ function ManualLogPanel({ classId, onClose }: { classId: string; onClose: () => 
     const fd = new FormData();
     fd.set("class_id", classId);
     fd.set("date", date);
-    fd.set("duration", duration);
+    fd.set("duration", duration.toString());
     const res = await addManualLog(fd);
     setPending(false);
     if (res?.error) {
@@ -474,7 +487,6 @@ function ManualLogPanel({ classId, onClose }: { classId: string; onClose: () => 
     } else {
       setSuccess("Đã lưu thành công!");
       setDate("");
-      setDuration("");
       sonner13("Đã thêm ca dạy thủ công");
     }
   }
@@ -491,28 +503,39 @@ function ManualLogPanel({ classId, onClose }: { classId: string; onClose: () => 
         </button>
       </div>
 
-      <div className="flex gap-3 flex-wrap">
-        <div className="grid gap-1 flex-1 min-w-[120px]">
+      <div className="flex gap-4 flex-wrap items-end">
+        <div className="grid gap-1 flex-1 min-w-[140px]">
           <Label className="text-xs">Ngày dạy</Label>
           <Input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
             required
-            className="h-8 text-sm"
+            className="h-9 text-sm"
           />
         </div>
-        <div className="grid gap-1 flex-1 min-w-[120px]">
-          <Label className="text-xs">Số giờ (vd: 1.5)</Label>
-          <Input
-            type="number"
-            step="0.25"
-            min="0.25"
-            value={duration}
-            onChange={(e) => setDuration(e.target.value)}
-            required
-            className="h-8 text-sm"
-          />
+        
+        <div className="flex items-center gap-2 bg-emerald-50/50 p-2 rounded-xl border border-emerald-100">
+          <div className="grid gap-1">
+            <Label className="text-[10px] text-emerald-700">Bắt đầu</Label>
+            <TimePicker
+              id="manual-start"
+              value={startTime}
+              onChange={setStartTime}
+            />
+          </div>
+          <span className="text-emerald-300 mt-4">→</span>
+          <div className="grid gap-1">
+            <Label className="text-[10px] text-emerald-700">Kết thúc</Label>
+            <TimePicker
+              id="manual-end"
+              value={endTime}
+              onChange={setEndTime}
+            />
+          </div>
+          <div className="ml-2 px-2 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-xs font-bold mt-4">
+            {duration}h
+          </div>
         </div>
       </div>
 
