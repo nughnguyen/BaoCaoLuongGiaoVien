@@ -389,33 +389,41 @@ function EditPanel({ cls, onClose }: { cls: ClassRow; onClose: () => void }) {
               return (
                 <div
                   key={s.day}
-                  className="grid items-center gap-2"
-                  style={{ gridTemplateColumns: "2.5rem 1fr auto" }}
+                  className="grid items-center gap-4"
+                  style={{ gridTemplateColumns: "3rem 1fr auto" }}
                 >
-                  <span className="text-xs font-semibold text-cyan-800 bg-cyan-100/70 text-center py-1 rounded-lg">
+                  <span className="text-xs font-bold text-cyan-800 bg-white shadow-sm border border-cyan-100 text-center py-2 rounded-xl">
                     {lbl}
                   </span>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <TimePicker
-                      id={`edit-start-${s.day}`}
-                      value={s.start_time}
-                      onChange={(v) => updateTime(s.day, "start_time", v)}
-                    />
-                    <span className="text-slate-400 text-xs">→</span>
-                    <TimePicker
-                      id={`edit-end-${s.day}`}
-                      value={s.end_time}
-                      onChange={(v) => updateTime(s.day, "end_time", v)}
-                    />
-                    <span className="text-cyan-700 text-xs font-semibold bg-cyan-100/60 px-2 py-0.5 rounded-full">
+                  
+                  <div className="flex items-center gap-2 bg-cyan-100/30 p-2 rounded-xl border border-cyan-100/50">
+                    <div className="grid gap-1">
+                      <Label className="text-[10px] text-cyan-700 font-semibold">Bắt đầu</Label>
+                      <TimePicker
+                        id={`edit-start-${s.day}`}
+                        value={s.start_time}
+                        onChange={(v) => updateTime(s.day, "start_time", v)}
+                      />
+                    </div>
+                    <span className="text-cyan-300 mt-4">→</span>
+                    <div className="grid gap-1">
+                      <Label className="text-[10px] text-cyan-700 font-semibold">Kết thúc</Label>
+                      <TimePicker
+                        id={`edit-end-${s.day}`}
+                        value={s.end_time}
+                        onChange={(v) => updateTime(s.day, "end_time", v)}
+                      />
+                    </div>
+                    <div className="ml-2 px-2 py-1 bg-cyan-600 text-white rounded-lg text-[10px] font-bold mt-4 shadow-sm">
                       {s.duration}h
-                    </span>
+                    </div>
                   </div>
+
                   <button
                     type="button"
                     onClick={() => toggleDay(s.day)}
                     title={`Xóa ca ${lblFull}`}
-                    className="w-7 h-7 flex items-center justify-center rounded-full text-slate-400 hover:text-white hover:bg-red-400 transition-colors text-xs shrink-0"
+                    className="w-8 h-8 flex items-center justify-center rounded-xl text-slate-400 hover:text-white hover:bg-red-400 transition-all hover:shadow-lg bg-white border border-slate-100"
                   >
                     ✕
                   </button>

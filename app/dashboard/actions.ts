@@ -320,7 +320,6 @@ export async function updateProfile(formData: FormData): Promise<ActionResult> {
       bank_name: bankName,
       bank_account_name: bankAccountName,
       bank_account_number: bankAccountNumber,
-      updated_at: new Date().toISOString(),
     });
 
   if (pError) return { error: pError.message };
