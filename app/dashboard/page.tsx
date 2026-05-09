@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { AttendanceLogRow, ClassRow } from "@/lib/types";
+import type { AttendanceLogRow, ClassRow, Profile } from "@/lib/types";
 import { redirect } from "next/navigation";
 import { CalendarCheck2 } from "lucide-react";
 import ClassForm from "./class-form";
@@ -21,11 +21,12 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
+  const { data: profileRaw } = await supabase
     .from("profiles")
-    .select("full_name, bank_name, bank_account_name, bank_account_number")
+    .select("id, full_name, role, bank_name, bank_account_name, bank_account_number")
     .eq("id", user.id)
     .single();
+  const profile = profileRaw as unknown as Profile | null;
 
   const { data: classesRaw } = await supabase
     .from("classes")

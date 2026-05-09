@@ -129,7 +129,7 @@ export async function GET(request: Request) {
     }
 
     // Apply borders ONLY to M2 and M3 (Summary area)
-    const borderStyle: Partial<ExcelJS.Border> = {
+    const borderStyle: Partial<ExcelJS.Borders> = {
       top: { style: 'thin' as ExcelJS.BorderStyle },
       left: { style: 'thin' as ExcelJS.BorderStyle },
       bottom: { style: 'thin' as ExcelJS.BorderStyle },
