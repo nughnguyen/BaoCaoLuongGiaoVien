@@ -235,21 +235,32 @@ export async function GET(request: Request) {
     grandTotalCell.numFmt = currencyFmt;
     grandTotalCell.font = { ...defaultFontTotal, bold: true, color: { argb: 'FF0070C0' } }; // Royal Blue
 
-    // Fill bank info, spaced 1 row after the last branch
+    // Fill bank info into FIXED range B15:D17
     if (profile) {
-      const bankStartRow = lastBranchRow + 2;
-      const bankNameCell = totalSheet.getCell(`D${bankStartRow}`);
-      const bankAccNameCell = totalSheet.getCell(`D${bankStartRow + 1}`);
-      const bankAccNumCell = totalSheet.getCell(`D${bankStartRow + 2}`);
+      const bankRows = [
+        { stt: 1, label: "TÊN NGÂN HÀNG", value: profile.bank_name || "" },
+        { stt: 2, label: "TÊN TÀI KHOẢN", value: profile.bank_account_name || "" },
+        { stt: 3, label: "SỐ TÀI KHOẢN", value: profile.bank_account_number || "" }
+      ];
 
-      bankNameCell.value = profile.bank_name || "";
-      bankNameCell.font = defaultFontTotal;
+      bankRows.forEach((row, idx) => {
+        const rowNum = 15 + idx;
+        const sttCell = totalSheet.getCell(`B${rowNum}`);
+        const labelCell = totalSheet.getCell(`C${rowNum}`);
+        const valueCell = totalSheet.getCell(`D${rowNum}`);
 
-      bankAccNameCell.value = profile.bank_account_name || "";
-      bankAccNameCell.font = defaultFontTotal;
+        sttCell.value = row.stt;
+        sttCell.font = { ...defaultFontTotal, color: { argb: 'FFFF0000' }, bold: true };
+        sttCell.border = borderStyle;
 
-      bankAccNumCell.value = profile.bank_account_number || "";
-      bankAccNumCell.font = defaultFontTotal;
+        labelCell.value = row.label;
+        labelCell.font = { ...defaultFontTotal, color: { argb: 'FFFF0000' }, bold: true };
+        labelCell.border = borderStyle;
+
+        valueCell.value = row.value;
+        valueCell.font = defaultFontTotal;
+        valueCell.border = borderStyle;
+      });
     }
   }
 
