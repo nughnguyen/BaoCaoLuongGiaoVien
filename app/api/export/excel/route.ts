@@ -194,13 +194,21 @@ export async function GET(request: Request) {
     // Fill bank info, spaced 1 row after the last branch
     if (profile) {
       const bankStartRow = lastBranchRow + 2;
-      const bankNameCell = totalSheet.getCell(`D${bankStartRow}`);
-      const bankAccNameCell = totalSheet.getCell(`D${bankStartRow + 1}`);
-      const bankAccNumCell = totalSheet.getCell(`D${bankStartRow + 2}`);
 
-      bankNameCell.value = profile.bank_name || "";
-      bankAccNameCell.value = profile.bank_account_name || "";
-      bankAccNumCell.value = profile.bank_account_number || "";
+      // STT 1: TÊN NGÂN HÀNG
+      totalSheet.getCell(`B${bankStartRow}`).value = 1;
+      totalSheet.getCell(`C${bankStartRow}`).value = "TÊN NGÂN HÀNG";
+      totalSheet.getCell(`D${bankStartRow}`).value = profile.bank_name || "";
+
+      // STT 2: TÊN TÀI KHOẢN
+      totalSheet.getCell(`B${bankStartRow + 1}`).value = 2;
+      totalSheet.getCell(`C${bankStartRow + 1}`).value = "TÊN TÀI KHOẢN";
+      totalSheet.getCell(`D${bankStartRow + 1}`).value = profile.bank_account_name || "";
+
+      // STT 3: SỐ TÀI KHOẢN
+      totalSheet.getCell(`B${bankStartRow + 2}`).value = 3;
+      totalSheet.getCell(`C${bankStartRow + 2}`).value = "SỐ TÀI KHOẢN";
+      totalSheet.getCell(`D${bankStartRow + 2}`).value = profile.bank_account_number || "";
     }
   }
 
