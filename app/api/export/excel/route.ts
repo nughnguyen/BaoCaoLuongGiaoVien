@@ -34,7 +34,7 @@ export async function GET(request: Request) {
 
   const { data: rows, error } = await supabase
     .from("attendance_logs")
-    .select("date, duration, total_earned, status, classes (class_name, student_name, teacher_name, branch_name, student_count, program_details, schedule_details)")
+    .select("date, duration, total_earned, status, start_time, end_time, classes (class_name, student_name, teacher_name, branch_name, student_count, program_details, schedule_details)")
     .eq("user_id", user.id)
     .eq("month_key", monthKey)
     .order("date", { ascending: true });
@@ -48,6 +48,8 @@ export async function GET(request: Request) {
     duration: number;
     total_earned: number;
     status: string;
+    start_time: string | null;
+    end_time: string | null;
     classes: { 
       class_name: string; 
       student_name: string; 
@@ -109,10 +111,15 @@ export async function GET(request: Request) {
         });
       }
 
-      // Find time slot for this day
-      const dayOfWeek = date.getDay();
-      const sched = s.classes?.schedule_details?.find(d => d.day === dayOfWeek);
-      const timeSlot = sched ? `${sched.start_time} - ${sched.end_time}` : "";
+      // Use stored time if available, otherwise find from schedule
+      let timeSlot = "";
+      if (s.start_time && s.end_time) {
+        timeSlot = `${s.start_time} - ${s.end_time}`;
+      } else {
+        const dayOfWeek = date.getDay();
+        const sched = s.classes?.schedule_details?.find(d => d.day === dayOfWeek);
+        timeSlot = sched ? `${sched.start_time} - ${sched.end_time}` : "";
+      }
 
       const c1 = row.getCell(1); c1.value = date.getDate(); c1.font = defaultFont;
       const c2 = row.getCell(2); c2.value = date.getMonth() + 1; c2.font = defaultFont;

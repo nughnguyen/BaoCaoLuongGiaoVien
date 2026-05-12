@@ -6,8 +6,11 @@ import type { ScheduleDetail } from "@/lib/types";
 import TimePicker from "./time-picker";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { AnimatePresence, easeOut, motion } from "motion/react";
+import { Button } from "@/components/ui/button";
+import { PlusIcon, School, User, Users, DollarSign, Calendar } from "lucide-react";
 import { sonner13, sonner16 } from "@/lib/sonner-presets";
+
+const DAY_LABELS = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
 
 export default function ClassForm() {
   const [pending, setPending] = useState(false);
@@ -27,7 +30,6 @@ export default function ClassForm() {
       prev.map((s) => {
         if (s.day !== day) return s;
         const newS = { ...s, [field]: value };
-        // calculate duration
         const [h1, m1] = newS.start_time.split(":").map(Number);
         const [h2, m2] = newS.end_time.split(":").map(Number);
         if (!isNaN(h1) && !isNaN(h2)) {
@@ -47,17 +49,14 @@ export default function ClassForm() {
     const form = e.currentTarget;
     const fd = new FormData(form);
     fd.set("schedule_details", JSON.stringify(schedules));
-    
-    // Add schedule[] backward compatibility for actions.ts to read
-    schedules.forEach(s => fd.append("schedule", s.day.toString()));
+    schedules.forEach((s) => fd.append("schedule", s.day.toString()));
 
     const res = await createClass(fd);
     setPending(false);
     if (res?.error) {
       setError(res.error);
       sonner16("Không thể thêm lớp", res.error);
-    }
-    else {
+    } else {
       form.reset();
       setSchedules([]);
       sonner13("Đã thêm lớp mới");
@@ -65,225 +64,157 @@ export default function ClassForm() {
   }
 
   return (
-    <form
-      onSubmit={onSubmit}
-      className="clay-card flex flex-wrap items-end gap-4 p-5"
-    >
-      <label className="flex min-w-[190px] flex-col gap-1 text-sm">
-        Chương trình (Tên lớp)
-        <input
-          name="class_name"
-          required
-          placeholder="Lớp 8, luyện thi IELTS..."
-          className="clay-inset px-3 py-2 outline-none"
-        />
-      </label>
-      <label className="flex min-w-[190px] flex-col gap-1 text-sm">
-        Giáo viên phụ trách
-        <input
-          name="teacher_name"
-          required
-          placeholder="Cô Lan, Thầy Hùng..."
-          className="clay-inset px-3 py-2 outline-none"
-        />
-      </label>
-      <label className="flex min-w-[190px] flex-col gap-1 text-sm">
-        Học viên
-        <input
-          name="student_name"
-          required
-          className="clay-inset px-3 py-2 outline-none"
-        />
-      </label>
-      <label className="flex min-w-[100px] flex-col gap-1 text-sm">
-        Số lượng HV
-        <input
-          name="student_count"
-          type="number"
-          min={1}
-          defaultValue={1}
-          required
-          className="clay-inset px-3 py-2 outline-none"
-        />
-      </label>
-      <label className="flex min-w-[190px] flex-col gap-1 text-sm">
-        Chi nhánh
-        <input
-          name="branch_name"
-          required
-          defaultValue="Cơ bản"
-          placeholder="Cơ bản, Chi nhánh 1..."
-          className="clay-inset px-3 py-2 outline-none"
-        />
-      </label>
-      <label className="flex min-w-[190px] flex-col gap-1 text-sm">
-        Lương / giờ (số)
-        <input
-          name="hourly_rate"
-          type="text"
-          inputMode="decimal"
-          required
-          placeholder="150000"
-          className="clay-inset px-3 py-2 outline-none"
-        />
-      </label>
+    <form onSubmit={onSubmit} className="space-y-6">
+      {error && (
+        <div className="bg-danger-light border border-danger/20 rounded-xl p-3 text-sm text-danger">
+          {error}
+        </div>
+      )}
 
-      <div className="w-full">
-        <p className="mb-2 text-sm font-medium">Lịch học trong tuần & Khung giờ</p>
-        
-        {/* Row of days */}
-        <div className="flex flex-wrap gap-2 text-sm mb-4">
-          {[
-            { value: 1, label: "T2" },
-            { value: 2, label: "T3" },
-            { value: 3, label: "T4" },
-            { value: 4, label: "T5" },
-            { value: 5, label: "T6" },
-            { value: 6, label: "T7" },
-            { value: 0, label: "CN" },
-          ].map(({ value, label }) => {
-            const isSelected = !!schedules.find((s) => s.day === value);
+      {/* Class Info Section */}
+      <div className="bg-card-bg rounded-2xl border border-border shadow-card p-6">
+        <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+          <School className="w-4 h-4 text-primary" />
+          Thông tin lớp học
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label className="text-xs font-medium text-muted mb-1.5 block">Tên lớp / Chương trình</Label>
+            <input
+              name="class_name"
+              required
+              placeholder="Lớp 8, luyện thi IELTS..."
+              className="w-full px-4 py-2.5 text-sm rounded-xl border border-border bg-gray-50 focus:bg-white focus:border-primary focus:outline-none transition-colors"
+            />
+          </div>
+          <div>
+            <Label className="text-xs font-medium text-muted mb-1.5 block">Chi nhánh</Label>
+            <input
+              name="branch_name"
+              defaultValue="Cơ bản"
+              className="w-full px-4 py-2.5 text-sm rounded-xl border border-border bg-gray-50 focus:bg-white focus:border-primary focus:outline-none transition-colors"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* People Section */}
+      <div className="bg-card-bg rounded-2xl border border-border shadow-card p-6">
+        <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+          <Users className="w-4 h-4 text-primary" />
+          Giáo viên & Học viên
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <Label className="text-xs font-medium text-muted mb-1.5 block">Giáo viên</Label>
+            <input
+              name="teacher_name"
+              required
+              placeholder="Cô Lan, Thầy Hùng..."
+              className="w-full px-4 py-2.5 text-sm rounded-xl border border-border bg-gray-50 focus:bg-white focus:border-primary focus:outline-none transition-colors"
+            />
+          </div>
+          <div>
+            <Label className="text-xs font-medium text-muted mb-1.5 block">Học viên</Label>
+            <input
+              name="student_name"
+              required
+              placeholder="Tên học viên"
+              className="w-full px-4 py-2.5 text-sm rounded-xl border border-border bg-gray-50 focus:bg-white focus:border-primary focus:outline-none transition-colors"
+            />
+          </div>
+          <div>
+            <Label className="text-xs font-medium text-muted mb-1.5 block">Số lượng HV</Label>
+            <input
+              name="student_count"
+              type="number"
+              min={1}
+              defaultValue={1}
+              required
+              className="w-full px-4 py-2.5 text-sm rounded-xl border border-border bg-gray-50 focus:bg-white focus:border-primary focus:outline-none transition-colors"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Salary Section */}
+      <div className="bg-card-bg rounded-2xl border border-border shadow-card p-6">
+        <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+          <DollarSign className="w-4 h-4 text-primary" />
+          Mức lương
+        </h3>
+        <div className="max-w-xs">
+          <Label className="text-xs font-medium text-muted mb-1.5 block">Lương / giờ (VNĐ)</Label>
+          <input
+            name="hourly_rate"
+            type="number"
+            min={0}
+            step="1000"
+            required
+            placeholder="200000"
+            className="w-full px-4 py-2.5 text-sm rounded-xl border border-border bg-gray-50 focus:bg-white focus:border-primary focus:outline-none transition-colors"
+          />
+        </div>
+      </div>
+
+      {/* Schedule Section */}
+      <div className="bg-card-bg rounded-2xl border border-border shadow-card p-6">
+        <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-primary" />
+          Lịch học trong tuần
+        </h3>
+        <div className="space-y-3">
+          {[2, 3, 4, 5, 6, 7, 1].map((day) => {
+            const isActive = schedules.some((s) => s.day === day);
+            const schedule = schedules.find((s) => s.day === day);
             return (
-              <ConfettiCheckbox
-                key={value}
-                checked={isSelected}
-                label={label}
-                onChange={() => {
-                  toggleDay(value);
-                }}
-              />
+              <div
+                key={day}
+                className={`flex items-center gap-4 p-3 rounded-xl border transition-all ${
+                  isActive
+                    ? "border-primary/30 bg-primary-light/30"
+                    : "border-border/50 bg-gray-50/50"
+                }`}
+              >
+                <label className="flex items-center gap-3 cursor-pointer min-w-[80px]">
+                  <Checkbox
+                    checked={isActive}
+                    onCheckedChange={() => toggleDay(day)}
+                    className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                  />
+                  <span className={`text-sm font-medium ${isActive ? "text-primary" : "text-muted"}`}>
+                    {DAY_LABELS[day]}
+                  </span>
+                </label>
+                {isActive && schedule && (
+                  <div className="flex items-center gap-2 flex-1">
+                    <TimePicker
+                      value={schedule.start_time}
+                      onChange={(v) => updateTime(day, "start_time", v)}
+                    />
+                    <span className="text-xs text-muted">đến</span>
+                    <TimePicker
+                      value={schedule.end_time}
+                      onChange={(v) => updateTime(day, "end_time", v)}
+                    />
+                    <span className="text-xs text-muted ml-2">
+                      ({schedule.duration}h)
+                    </span>
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>
-
-        {/* Selected days time inputs */}
-        {schedules.length > 0 && (
-          <div className="flex flex-col gap-2 text-sm bg-cyan-50/30 p-3 rounded-2xl">
-            {[...schedules].sort((a, b) => a.day - b.day).map((schedule) => {
-              const label = schedule.day === 0 ? "CN" : `T${schedule.day + 1}`;
-              const labelFull = schedule.day === 0 ? "Chủ nhật" : `Thứ ${schedule.day + 1}`;
-              return (
-                <div
-                  key={schedule.day}
-                  className="grid items-center gap-2 py-1"
-                  style={{ gridTemplateColumns: "3rem 1fr auto" }}
-                >
-                  {/* Label */}
-                  <span className="font-semibold text-cyan-800 text-xs bg-cyan-100/70 text-center px-1 py-1 rounded-lg">
-                    {label}
-                  </span>
-
-                  {/* Time pickers */}
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <TimePicker
-                      id={`start-${schedule.day}`}
-                      value={schedule.start_time}
-                      onChange={(v) => updateTime(schedule.day, "start_time", v)}
-                    />
-                    <span className="text-slate-400 text-xs select-none">→</span>
-                    <TimePicker
-                      id={`end-${schedule.day}`}
-                      value={schedule.end_time}
-                      onChange={(v) => updateTime(schedule.day, "end_time", v)}
-                    />
-                    <span className="text-cyan-700 font-semibold text-xs bg-cyan-100/60 px-2 py-0.5 rounded-full whitespace-nowrap">
-                      {schedule.duration}h
-                    </span>
-                  </div>
-
-                  {/* Nút xóa ca — luôn cố định bên phải */}
-                  <button
-                    type="button"
-                    onClick={() => toggleDay(schedule.day)}
-                    title={`Xóa ca ${labelFull}`}
-                    aria-label={`Xóa ca ${labelFull}`}
-                    className="w-7 h-7 flex items-center justify-center rounded-full text-slate-400 hover:text-white hover:bg-red-400 active:bg-red-500 transition-all duration-150 text-xs font-bold shrink-0"
-                  >
-                    ✕
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        )}
       </div>
-      {error && (
-        <p className="w-full text-sm text-red-600" role="alert">
-          {error}
-        </p>
-      )}
-      <button
-        type="submit"
-        disabled={pending}
-        className="clay-btn px-4 py-2 text-sm disabled:opacity-60"
-      >
-        {pending ? "Đang tạo…" : "Thêm lớp"}
-      </button>
+
+      {/* Submit */}
+      <div className="flex justify-end">
+        <Button type="submit" disabled={pending} className="gap-2 px-8">
+          <PlusIcon className="w-4 h-4" />
+          {pending ? "Đang tạo..." : "Tạo lớp học"}
+        </Button>
+      </div>
     </form>
-  );
-}
-
-function particleAnimation(index: number) {
-  const angle = Math.random() * Math.PI * 2;
-  const distance = 24 + Math.random() * 16;
-  return {
-    initial: { x: "50%", y: "50%", scale: 0, opacity: 0 },
-    animate: {
-      x: `calc(50% + ${Math.cos(angle) * distance}px)`,
-      y: `calc(50% + ${Math.sin(angle) * distance}px)`,
-      scale: [0, 1, 0],
-      opacity: [0, 1, 0],
-    },
-    transition: { duration: 0.4, delay: index * 0.04, ease: easeOut },
-  };
-}
-
-function ConfettiCheckbox({
-  checked,
-  label,
-  onChange,
-}: {
-  checked: boolean;
-  label: string;
-  onChange: () => void;
-}) {
-  const [showConfetti, setShowConfetti] = useState(false);
-  const id = `day-${label}`;
-  return (
-    <div
-      className={`relative flex items-center gap-2 rounded-xl px-2 py-1.5 ${
-        checked ? "bg-cyan-600 text-white shadow-md" : "clay-inset text-slate-500"
-      }`}
-    >
-      <Checkbox
-        id={id}
-        checked={checked}
-        onCheckedChange={(value) => {
-          if (value) {
-            setShowConfetti(true);
-            window.setTimeout(() => setShowConfetti(false), 800);
-          }
-          onChange();
-        }}
-        className="border-white/60 data-[state=checked]:bg-white data-[state=checked]:text-cyan-700"
-      />
-      <Label htmlFor={id} className="cursor-pointer text-xs font-semibold">
-        {label}
-      </Label>
-      <AnimatePresence>
-        {showConfetti && (
-          <div className="pointer-events-none absolute inset-0">
-            {[...Array(10)].map((_, i) => (
-              <motion.div
-                key={i}
-                className="absolute size-1 rounded-full"
-                style={{ backgroundColor: ["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#00FFFF"][i % 6] }}
-                {...particleAnimation(i)}
-              />
-            ))}
-          </div>
-        )}
-      </AnimatePresence>
-    </div>
   );
 }

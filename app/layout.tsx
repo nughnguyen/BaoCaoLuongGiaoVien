@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Báo cáo ca dạy",
+  title: "TeachTrack — Quản lý dạy học",
   description: "Quản lý ca dạy và lương theo lớp — Next.js & Supabase",
 };
 
@@ -28,7 +28,7 @@ export default function RootLayout({
       lang="vi"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col bg-background">
         {children}
         <Toaster />
       </body>

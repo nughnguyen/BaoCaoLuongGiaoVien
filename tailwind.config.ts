@@ -5,18 +5,32 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        clay: {
-          base: "#e8eef7",
-          pastelGreen: "#b9efcf",
-          pastelOrange: "#ffd6b5",
+        primary: {
+          DEFAULT: "#2E5BFF",
+          light: "#EEF2FF",
+          dark: "#1E40AF",
+        },
+        success: {
+          DEFAULT: "#059669",
+          light: "#ECFDF5",
+        },
+        danger: {
+          DEFAULT: "#E11D48",
+          light: "#FFF1F2",
+        },
+        warning: {
+          DEFAULT: "#F59E0B",
+          light: "#FFFBEB",
         },
       },
       borderRadius: {
-        clay: "30px",
+        "2xl": "16px",
+        "3xl": "20px",
       },
       boxShadow: {
-        clay:
-          "10px 10px 20px rgba(150, 170, 198, 0.45), -8px -8px 16px rgba(255, 255, 255, 0.85), inset 2px 2px 4px rgba(255,255,255,0.8)",
+        card: "0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06)",
+        "card-hover": "0 4px 12px rgba(0,0,0,0.08)",
+        sidebar: "1px 0 0 0 #E5E7EB",
       },
     },
   },

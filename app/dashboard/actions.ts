@@ -15,6 +15,16 @@ function monthKey(date: Date): string {
   return `${String(date.getMonth() + 1).padStart(2, "0")}-${date.getFullYear()}`;
 }
 
+function calculateDuration(start: string, end: string): number {
+  const [sH, sM] = start.split(":").map(Number);
+  const [eH, eM] = end.split(":").map(Number);
+  const startMins = sH * 60 + sM;
+  const endMins = eH * 60 + eM;
+  let diff = endMins - startMins;
+  if (diff < 0) diff += 24 * 60; // handle overnight if needed, though unlikely for teaching
+  return diff / 60;
+}
+
 export async function createClass(formData: FormData): Promise<ActionResult> {
   const supabase = await createClient();
   const {
@@ -80,11 +90,11 @@ async function confirmCheckin(classId: string, status: "present" | "absent", dur
 
   const { data: classRow, error: classErr } = await supabase
     .from("classes")
-    .select("hourly_rate")
+    .select("hourly_rate, schedule_details")
     .eq("id", classId)
     .eq("user_id", user.id)
     .single();
-  if (classErr) return { error: classErr.message };
+  if (classErr || !classRow) return { error: classErr?.message || "Không tìm thấy lớp." };
 
   const { error: checkinError } = await supabase.from("daily_checkins").insert({
     user_id: user.id,
@@ -95,6 +105,17 @@ async function confirmCheckin(classId: string, status: "present" | "absent", dur
   if (checkinError) return { error: checkinError.message };
 
   if (status === "present") {
+    // Try to get times from schedule
+    let startTime = null;
+    let endTime = null;
+    const scheduleDetails = (classRow.schedule_details as any[]) || [];
+    const dayOfWeek = new Date(dateIso).getDay();
+    const sched = scheduleDetails.find((d) => d.day === dayOfWeek);
+    if (sched) {
+      startTime = sched.start_time;
+      endTime = sched.end_time;
+    }
+
     const totalEarned = Number(classRow.hourly_rate) * duration;
     const logDate = new Date(dateIso);
     const { error: logError } = await supabase.from("attendance_logs").insert({
@@ -105,6 +126,8 @@ async function confirmCheckin(classId: string, status: "present" | "absent", dur
       total_earned: totalEarned,
       month_key: monthKey(logDate),
       status: "completed",
+      start_time: startTime,
+      end_time: endTime,
     });
     if (logError) return { error: logError.message };
   }
@@ -191,10 +214,16 @@ export async function updateClass(formData: FormData): Promise<ActionResult> {
 export async function addManualLog(formData: FormData): Promise<ActionResult> {
   const classId = String(formData.get("class_id") ?? "");
   const dateStr = String(formData.get("date") ?? "");
-  const duration = parseDuration(formData.get("duration"));
+  const startTime = String(formData.get("start_time") ?? "");
+  const endTime = String(formData.get("end_time") ?? "");
 
-  if (!classId || !dateStr || !Number.isFinite(duration) || duration <= 0) {
-    return { error: "Thông tin ca dạy thủ công không hợp lệ." };
+  if (!classId || !dateStr || !startTime || !endTime) {
+    return { error: "Thông tin ca dạy thủ công không đầy đủ." };
+  }
+
+  const duration = calculateDuration(startTime, endTime);
+  if (duration <= 0) {
+    return { error: "Thời gian kết thúc phải sau thời gian bắt đầu." };
   }
 
   const supabase = await createClient();
@@ -212,7 +241,6 @@ export async function addManualLog(formData: FormData): Promise<ActionResult> {
   
   if (classErr || !classRow) return { error: "Không tìm thấy lớp học." };
 
-  // Check if checkin already exists
   const { data: existing } = await supabase
     .from("daily_checkins")
     .select("id")
@@ -223,7 +251,6 @@ export async function addManualLog(formData: FormData): Promise<ActionResult> {
 
   if (existing) return { error: "Ngày này đã có điểm danh trên hệ thống." };
 
-  // Insert daily checkin
   const { error: checkinError } = await supabase.from("daily_checkins").insert({
     user_id: user.id,
     class_id: classId,
@@ -233,7 +260,6 @@ export async function addManualLog(formData: FormData): Promise<ActionResult> {
 
   if (checkinError) return { error: checkinError.message };
 
-  // Insert attendance log
   const logDate = new Date(dateStr);
   const totalEarned = Number(classRow.hourly_rate) * duration;
   const { error: logError } = await supabase.from("attendance_logs").insert({
@@ -244,6 +270,8 @@ export async function addManualLog(formData: FormData): Promise<ActionResult> {
     total_earned: totalEarned,
     month_key: monthKey(logDate),
     status: "completed",
+    start_time: startTime,
+    end_time: endTime,
   });
 
   if (logError) return { error: logError.message };

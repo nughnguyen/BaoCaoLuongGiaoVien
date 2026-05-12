@@ -35,5 +35,7 @@ export type AttendanceLogRow = {
   total_earned: number;
   month_key: string;
   status: "completed" | "absent";
+  start_time: string | null;
+  end_time: string | null;
   classes: { class_name: string; student_name: string; branch_name: string } | null;
 };

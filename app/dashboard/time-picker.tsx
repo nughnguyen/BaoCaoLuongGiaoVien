@@ -1,23 +1,18 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
-
-interface TimePickerProps {
-  value: string; // "HH:MM"
-  onChange: (value: string) => void;
-  id?: string;
-}
-
-export default function TimePicker({ value, onChange, id }: TimePickerProps) {
+export default function TimePicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
   return (
-    <Input
-      id={id}
+    <input
       type="time"
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      // Ẩn calendar picker indicator để trình duyệt hiển thị text thuần 24h
-      className="w-[110px] bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none clay-inset border-0 px-3 py-2 text-sm font-medium text-cyan-900 shadow-none focus-visible:ring-0"
-      aria-label={id?.startsWith("start") ? "Giờ bắt đầu" : "Giờ kết thúc"}
+      className="px-3 py-1.5 text-sm rounded-lg border border-border bg-white focus:border-primary focus:outline-none transition-colors"
     />
   );
 }

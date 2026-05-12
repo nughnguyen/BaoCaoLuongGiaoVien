@@ -3,8 +3,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Separator } from "@/components/ui/separator";
-import { BellIcon, CircleIcon } from "lucide-react";
+import { BellIcon, CheckCircle2, XCircle } from "lucide-react";
 import { useMemo, useState } from "react";
 import { markClassAbsent, markClassCompleted } from "./actions";
 import { sonner13, sonner14, sonner16 } from "@/lib/sonner-presets";
@@ -32,17 +31,10 @@ export default function NotificationButton({ pendingSessions }: { pendingSession
   const getDayName = (dateIso: string) => {
     const today = new Date().toISOString().slice(0, 10);
     if (dateIso === today) return "Hôm nay";
-    
-    const d = new Date(dateIso);
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayIso = yesterday.toISOString().slice(0, 10);
-    
-    if (dateIso === yesterdayIso) return "Hôm qua";
-    
-    const day = d.getDate().toString().padStart(2, '0');
-    const month = (d.getMonth() + 1).toString().padStart(2, '0');
-    return `${day}/${month}`;
+    if (dateIso === yesterday.toISOString().slice(0, 10)) return "Hôm qua";
+    return new Date(dateIso).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
   };
 
   async function submitPresent(classId: string, duration: string, dateIso: string) {
@@ -71,7 +63,7 @@ export default function NotificationButton({ pendingSessions }: { pendingSession
     const res = await markClassAbsent(fd);
     setPendingKey(null);
     if (res.error) {
-      sonner16("Cập nhật nghỉ/vắng thất bại", res.error);
+      sonner16("Cập nhật thất bại", res.error);
       return;
     }
     sonner14("Đã ghi nhận học viên vắng/nghỉ");
@@ -81,102 +73,65 @@ export default function NotificationButton({ pendingSessions }: { pendingSession
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" className="relative gap-2 clay-card bg-white/80 border-cyan-100 h-11 px-4">
-          <BellIcon className="size-5 text-cyan-700" />
-          <span className="hidden sm:inline font-medium text-cyan-900">Thông báo</span>
+        <button className="relative w-10 h-10 rounded-xl border border-border bg-white flex items-center justify-center hover:bg-gray-50 transition-colors">
+          <BellIcon className="w-[18px] h-[18px] text-muted" />
           {unread > 0 && (
-            <Badge
-              variant="destructive"
-              className="absolute -right-2 -top-2 h-5 min-w-5 flex items-center justify-center px-1 py-0 text-[11px] font-bold shadow-lg"
-            >
+            <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-danger text-white text-[10px] font-bold flex items-center justify-center shadow-sm">
               {unread}
-            </Badge>
+            </span>
           )}
-        </Button>
+        </button>
       </PopoverTrigger>
-      <PopoverContent className="w-96 p-0 border-cyan-100 shadow-2xl rounded-2xl overflow-hidden">
-        <div className="grid">
-          <div className="flex items-center justify-between gap-2 px-4 py-3 bg-cyan-50/50">
-            <span className="font-semibold text-cyan-900">Thông báo lịch dạy</span>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 rounded-full px-3 py-1 text-xs text-cyan-700 hover:bg-cyan-100 hover:text-cyan-800"
-              onClick={() => setReadKeys(pendingSessions.map((s) => `${s.class.id}-${s.dateIso}`))}
-            >
-              Đánh dấu đã đọc
-            </Button>
-          </div>
-          <Separator className="bg-cyan-100" />
-          <ul className="grid gap-0 p-0 max-h-[400px] overflow-y-auto">
-            {pendingSessions.length === 0 && (
-              <li className="px-4 py-8 text-center text-sm text-slate-500 bg-white">
-                Không có ca dạy nào cần điểm danh.
-              </li>
-            )}
-            {pendingSessions.map((s) => {
-              const key = `${s.class.id}-${s.dateIso}`;
-              const dDay = new Date(s.dateIso).getDay();
-              const schedule = s.class.schedule_details?.find((sd) => sd.day === dDay);
-              const duration = schedule ? schedule.duration : 1;
-              const dayLabel = getDayName(s.dateIso);
+      <PopoverContent className="w-80 p-0 border-border shadow-lg rounded-2xl overflow-hidden" align="end">
+        <div className="px-4 py-3 border-b border-border bg-gray-50/50">
+          <span className="text-sm font-semibold text-foreground">Thông báo lịch dạy</span>
+        </div>
+        <div className="max-h-[360px] overflow-y-auto">
+          {pendingSessions.length === 0 ? (
+            <div className="p-6 text-center">
+              <CheckCircle2 className="w-8 h-8 text-success mx-auto mb-2" />
+              <p className="text-sm text-muted">Không có ca nào cần điểm danh</p>
+            </div>
+          ) : (
+            pendingSessions.map((session) => {
+              const key = `${session.class.id}-${session.dateIso}`;
+              const isRead = readKeys.includes(key);
+              const isPending = pendingKey === key;
+              if (isRead) return null;
 
               return (
-                <li
-                  key={key}
-                  className="hover:bg-cyan-50/50 flex items-start gap-3 px-4 py-3 border-b border-cyan-50/50 last:border-0 transition-colors cursor-pointer"
-                  onClick={() => setReadKeys((prev) => [...prev, key])}
-                >
-                  <div className="mt-0.5 flex flex-col items-center min-w-[50px] gap-1">
-                    <div className="rounded-lg bg-cyan-100 px-2 py-0.5 text-[10px] font-bold text-cyan-800 uppercase text-center">
-                      {dayLabel}
+                <div key={key} className="px-4 py-3 border-b border-border/50 last:border-0">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{session.class.class_name}</p>
+                      <p className="text-xs text-muted">{session.class.student_name}</p>
                     </div>
-                    <div className="text-[10px] text-slate-400 font-medium">
-                      {schedule?.start_time || "Chưa set giờ"}
-                    </div>
+                    <Badge variant={session.dateIso === new Date().toISOString().slice(0, 10) ? "default" : "outline"} className="text-[10px] shrink-0">
+                      {getDayName(session.dateIso)}
+                    </Badge>
                   </div>
-                  <div className="flex-1 space-y-1.5">
-                    <div className="text-sm font-semibold text-slate-800">
-                      {s.class.class_name}
-                    </div>
-                    <div className="text-xs text-slate-500">
-                      Học viên: {s.class.student_name}
-                    </div>
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      <button
-                        type="button"
-                        disabled={pendingKey === key}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          void submitPresent(s.class.id, String(duration), s.dateIso);
-                        }}
-                        className="rounded-lg bg-cyan-600 px-3 py-1.5 text-[11px] font-bold text-white shadow-sm hover:bg-cyan-700 active:scale-95 transition-all disabled:opacity-50"
-                      >
-                        Xác nhận ({duration}h)
-                      </button>
-                      <button
-                        type="button"
-                        disabled={pendingKey === key}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          void submitAbsent(s.class.id, s.dateIso);
-                        }}
-                        className="rounded-lg bg-orange-100 px-3 py-1.5 text-[11px] font-bold text-orange-800 hover:bg-orange-200 active:scale-95 transition-all disabled:opacity-50"
-                      >
-                        Báo nghỉ
-                      </button>
-                    </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => submitPresent(session.class.id, "2", session.dateIso)}
+                      disabled={isPending}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium bg-success text-white hover:bg-emerald-600 transition-colors disabled:opacity-50"
+                    >
+                      <CheckCircle2 className="w-3 h-3" />
+                      Hoàn thành
+                    </button>
+                    <button
+                      onClick={() => submitAbsent(session.class.id, session.dateIso)}
+                      disabled={isPending}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium border border-danger/20 text-danger hover:bg-danger-light transition-colors disabled:opacity-50"
+                    >
+                      <XCircle className="w-3 h-3" />
+                      Vắng
+                    </button>
                   </div>
-                  {!readKeys.includes(key) && (
-                    <div className="mt-1.5">
-                      <CircleIcon className="size-2.5 fill-cyan-500 text-cyan-500" />
-                    </div>
-                  )}
-                </li>
+                </div>
               );
-            })}
-          </ul>
+            })
+          )}
         </div>
       </PopoverContent>
     </Popover>

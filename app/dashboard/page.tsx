@@ -1,12 +1,15 @@
 import { createClient } from "@/lib/supabase/server";
 import type { AttendanceLogRow, ClassRow, Profile } from "@/lib/types";
 import { redirect } from "next/navigation";
-import { CalendarCheck2 } from "lucide-react";
+import { CalendarCheck2, PlusIcon } from "lucide-react";
 import ClassForm from "./class-form";
 import ClassList from "./class-list";
-import DashboardNavigationMenu from "./navigation-menu";
-import MonthLogsTable from "./month-logs-table";
-import TodayCheckinCard from "./today-checkin-card";
+import Sidebar from "./sidebar";
+import StatsCards from "./stats-cards";
+import EarningsChart from "./earnings-chart";
+import TodaySessions from "./today-sessions";
+import SessionTable from "./session-table";
+import RightPanel from "./right-panel";
 import NotificationButton from "./notification-button";
 
 export default async function DashboardPage() {
@@ -35,16 +38,19 @@ export default async function DashboardPage() {
     .order("class_name");
   const classes = (classesRaw ?? []) as ClassRow[];
 
-  const { data: monthLogsRaw, error: monthError } = await supabase
+  const { data: monthLogsRaw } = await supabase
     .from("attendance_logs")
     .select("id, class_id, date, duration, total_earned, month_key, status, classes (class_name, student_name, branch_name, student_count)")
     .eq("user_id", user.id)
     .eq("month_key", monthKey)
     .order("date", { ascending: false });
   const monthLogs = (monthLogsRaw ?? []) as unknown as AttendanceLogRow[];
-  const totalIncome = monthLogs.reduce((sum, row) => sum + Number(row.total_earned), 0);
 
-  // Logic nhắc nhở 7 ngày gần nhất
+  const totalIncome = monthLogs.reduce((sum, row) => sum + Number(row.total_earned), 0);
+  const totalHours = monthLogs.reduce((sum, row) => sum + Number(row.duration), 0);
+  const completedSessions = monthLogs.filter((l) => l.status === "completed").length;
+
+  // Pending sessions logic (last 7 days)
   const pendingSessions: { class: ClassRow; dateIso: string }[] = [];
   for (let i = 0; i < 7; i++) {
     const d = new Date();
@@ -57,68 +63,118 @@ export default async function DashboardPage() {
       .select("class_id")
       .eq("user_id", user.id)
       .eq("date", dIso);
-    
-    const checkedInIds = new Set((checkins ?? []).map(c => c.class_id));
-    
-    const missing = classes.filter(c => c.schedule.includes(dDay) && !checkedInIds.has(c.id));
-    missing.forEach(c => pendingSessions.push({ class: c, dateIso: dIso }));
+
+    const checkedInIds = new Set((checkins ?? []).map((c) => c.class_id));
+    const missing = classes.filter((c) => c.schedule.includes(dDay) && !checkedInIds.has(c.id));
+    missing.forEach((c) => pendingSessions.push({ class: c, dateIso: dIso }));
   }
 
   const userName = profile?.full_name || user.user_metadata?.full_name || "Giáo viên";
 
   return (
-    <div
-      id="dashboard-top"
-      className="flex w-full flex-col gap-8 pb-10 pl-4 pr-3 pt-16 lg:py-10 lg:pl-70 lg:pr-4"
-    >
-      <DashboardNavigationMenu monthKey={monthKey} profile={profile || { full_name: user.user_metadata?.full_name || "Giáo viên", id: user.id, role: "teacher" }} />
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <div className="clay-card p-5 flex-1 min-w-[300px]">
-          <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
-            <CalendarCheck2 className="h-6 w-6 text-emerald-700" />
-            {userName}
-          </h1>
-          <p className="text-sm text-slate-600">
-            Báo cáo lương - tháng {monthKey}
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <NotificationButton pendingSessions={pendingSessions} />
-        </div>
-      </header>
+    <div className="min-h-screen bg-background">
+      {/* Sidebar */}
+      <Sidebar
+        monthKey={monthKey}
+        profile={
+          profile || {
+            full_name: user.user_metadata?.full_name || "Giáo viên",
+            id: user.id,
+            role: "teacher",
+          }
+        }
+      />
 
-      {monthError && (
-        <p className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-800">
-          Lỗi tải dữ liệu: {monthError.message}. Kiểm tra migration mới đã chạy.
-        </p>
-      )}
+      {/* Main Content */}
+      <div className="ml-[240px]">
+        {/* Header */}
+        <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold text-foreground">Dashboard</h1>
+              <p className="text-sm text-muted">Monthly Teaching Overview — {monthKey}</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <NotificationButton pendingSessions={pendingSessions} />
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                {userName
+                  .split(" ")
+                  .map((w: string) => w[0])
+                  .join("")
+                  .slice(0, 2)
+                  .toUpperCase()}
+              </div>
+            </div>
+          </div>
+        </header>
 
-      <section id="today-reminders">
-        <TodayCheckinCard pendingSessions={pendingSessions} />
-      </section>
+        {/* Dashboard Content — 2 columns (main + right panel) */}
+        <div className="flex gap-6 p-6">
+          {/* Main Column */}
+          <div className="flex-1 min-w-0 space-y-6">
+            {/* Stats Cards */}
+            <StatsCards
+              totalSalary={totalIncome}
+              totalHours={totalHours}
+              completedSessions={completedSessions}
+            />
 
-      <section id="class-management" className="space-y-4">
-        <h2 className="text-lg font-medium text-cyan-900">Quản lý lớp học</h2>
-        <div id="class-form">
-          <ClassForm />
+            {/* Chart */}
+            <EarningsChart monthLogs={monthLogs} />
+
+            {/* Today Sessions */}
+            <section id="today-reminders">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+                  <CalendarCheck2 className="w-5 h-5 text-primary" />
+                  Ca dạy cần điểm danh
+                </h2>
+                <span className="text-xs text-muted">
+                  {pendingSessions.length} ca chưa xác nhận
+                </span>
+              </div>
+              <TodaySessions pendingSessions={pendingSessions} />
+            </section>
+
+            {/* Class Form */}
+            <section id="class-form">
+              <h2 className="text-base font-semibold text-foreground mb-4">Tạo lớp học mới</h2>
+              <ClassForm />
+            </section>
+
+            {/* Class List */}
+            <section id="class-list">
+              <h2 className="text-base font-semibold text-foreground mb-4">Danh sách lớp học</h2>
+              <ClassList classes={classes} />
+            </section>
+
+            {/* Session Table */}
+            <section id="month-report">
+              <h2 className="text-base font-semibold text-foreground mb-4">Báo cáo tháng</h2>
+              <SessionTable monthLogs={monthLogs} />
+            </section>
+          </div>
+
+          {/* Right Panel */}
+          <div className="w-[300px] shrink-0">
+            <div className="sticky top-[73px]">
+              <RightPanel
+                monthLogs={monthLogs}
+                pendingSessions={pendingSessions}
+                classes={classes}
+              />
+            </div>
+          </div>
         </div>
-        
-        <h3 className="text-sm font-medium text-zinc-700 mt-6 mb-2">Danh sách các lớp hiện có</h3>
-        <div id="class-list">
-          <ClassList classes={classes} />
-        </div>
-      </section>
+      </div>
 
-      <section id="month-report" className="space-y-3">
-        <div className="clay-card flex flex-wrap items-center justify-between gap-3 p-4">
-          <h2 className="text-sm font-medium text-zinc-700">Tổng thu nhập tháng hiện tại</h2>
-          <span className="text-xl font-semibold text-emerald-900">
-            {totalIncome.toLocaleString("vi-VN")} VND
-          </span>
-        </div>
-
-        <MonthLogsTable monthLogs={monthLogs} />
-      </section>
+      {/* Floating Action Button */}
+      <a
+        href="#today-reminders"
+        className="fixed bottom-6 right-6 w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-blue-500 text-white shadow-lg shadow-primary/30 flex items-center justify-center hover:shadow-xl hover:scale-105 transition-all duration-200 z-50"
+      >
+        <PlusIcon className="w-6 h-6" />
+      </a>
     </div>
   );
 }
