@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { AttendanceLogRow, ClassRow, Profile } from "@/lib/types";
 import { redirect } from "next/navigation";
-import { CalendarCheck2, PlusIcon } from "lucide-react";
+import { CalendarCheck2, PlusIcon, Sparkles } from "lucide-react";
 import ClassForm from "./class-form";
 import ClassList from "./class-list";
 import Sidebar from "./sidebar";
@@ -11,6 +11,8 @@ import TodaySessions from "./today-sessions";
 import SessionTable from "./session-table";
 import RightPanel from "./right-panel";
 import NotificationButton from "./notification-button";
+import Clock from "./clock";
+import Footer from "./footer";
 
 export default async function DashboardPage() {
   const now = new Date();
@@ -73,6 +75,8 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <div id="dashboard-top" className="absolute top-0 left-0 w-full h-1" />
+      
       {/* Sidebar */}
       <Sidebar
         monthKey={monthKey}
@@ -86,32 +90,43 @@ export default async function DashboardPage() {
       />
 
       {/* Main Content */}
-      <div className="ml-[240px]">
+      <div className="ml-[240px] flex flex-col min-h-screen">
         {/* Header */}
-        <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border px-8 py-4">
+        <header className="sticky top-0 z-30 bg-white/70 backdrop-blur-xl border-b border-border/50 px-8 py-5">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold text-foreground">Dashboard</h1>
-              <p className="text-sm text-muted">Monthly Teaching Overview — {monthKey}</p>
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-black text-foreground tracking-tight">Dashboard</h1>
+                <Sparkles className="w-4 h-4 text-warning animate-pulse" />
+              </div>
+              <p className="text-sm font-medium text-muted-light flex items-center gap-2">
+                Monthly Overview — <Clock />
+              </p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               <NotificationButton pendingSessions={pendingSessions} />
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                {userName
-                  .split(" ")
-                  .map((w: string) => w[0])
-                  .join("")
-                  .slice(0, 2)
-                  .toUpperCase()}
+              <div className="flex items-center gap-3 p-1 pr-4 rounded-full bg-gray-50 border border-border/50 hover:bg-white transition-colors cursor-pointer group">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary via-accent-blue to-accent-purple flex items-center justify-center text-white text-xs font-black shadow-lg group-hover:scale-105 transition-transform">
+                  {userName
+                    .split(" ")
+                    .map((w: string) => w[0])
+                    .join("")
+                    .slice(0, 2)
+                    .toUpperCase()}
+                </div>
+                <div className="hidden lg:block">
+                  <p className="text-xs font-bold text-foreground leading-none mb-0.5">{userName}</p>
+                  <p className="text-[10px] font-bold text-muted uppercase tracking-wider leading-none">Teacher</p>
+                </div>
               </div>
             </div>
           </div>
         </header>
 
         {/* Dashboard Content — 2 columns (main + right panel) */}
-        <div className="flex gap-6 p-6">
+        <div className="flex-1 flex gap-6 p-8">
           {/* Main Column */}
-          <div className="flex-1 min-w-0 space-y-6">
+          <div className="flex-1 min-w-0 space-y-10">
             {/* Stats Cards */}
             <StatsCards
               totalSalary={totalIncome}
@@ -120,16 +135,20 @@ export default async function DashboardPage() {
             />
 
             {/* Chart */}
-            <EarningsChart monthLogs={monthLogs} />
+            <div className="bg-card-bg rounded-3xl border border-border shadow-xl shadow-primary/5 p-2 overflow-hidden">
+              <EarningsChart monthLogs={monthLogs} />
+            </div>
 
             {/* Today Sessions */}
-            <section id="today-reminders">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
-                  <CalendarCheck2 className="w-5 h-5 text-primary" />
+            <section id="today-reminders" className="scroll-mt-[100px]">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-black text-foreground flex items-center gap-3 uppercase tracking-wider">
+                  <div className="p-2 rounded-xl bg-primary-light text-primary">
+                    <CalendarCheck2 className="w-5 h-5" />
+                  </div>
                   Ca dạy cần điểm danh
                 </h2>
-                <span className="text-xs text-muted">
+                <span className="px-3 py-1 rounded-full bg-danger-light text-danger text-[10px] font-black uppercase tracking-widest">
                   {pendingSessions.length} ca chưa xác nhận
                 </span>
               </div>
@@ -137,27 +156,42 @@ export default async function DashboardPage() {
             </section>
 
             {/* Class Form */}
-            <section id="class-form">
-              <h2 className="text-base font-semibold text-foreground mb-4">Tạo lớp học mới</h2>
+            <section id="class-form" className="scroll-mt-[100px]">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 rounded-xl bg-success-light text-success">
+                  <PlusIcon className="w-5 h-5" />
+                </div>
+                <h2 className="text-lg font-black text-foreground uppercase tracking-wider">Tạo lớp học mới</h2>
+              </div>
               <ClassForm />
             </section>
 
             {/* Class List */}
-            <section id="class-list">
-              <h2 className="text-base font-semibold text-foreground mb-4">Danh sách lớp học</h2>
+            <section id="class-list" className="scroll-mt-[100px]">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 rounded-xl bg-accent-blue/10 text-accent-blue">
+                  <PlusIcon className="w-5 h-5" />
+                </div>
+                <h2 className="text-lg font-black text-foreground uppercase tracking-wider">Danh sách lớp học</h2>
+              </div>
               <ClassList classes={classes} />
             </section>
 
             {/* Session Table */}
-            <section id="month-report">
-              <h2 className="text-base font-semibold text-foreground mb-4">Báo cáo tháng</h2>
+            <section id="month-report" className="scroll-mt-[100px]">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 rounded-xl bg-accent-purple/10 text-accent-purple">
+                  <PlusIcon className="w-5 h-5" />
+                </div>
+                <h2 className="text-lg font-black text-foreground uppercase tracking-wider">Báo cáo tháng</h2>
+              </div>
               <SessionTable monthLogs={monthLogs} />
             </section>
           </div>
 
           {/* Right Panel */}
-          <div className="w-[300px] shrink-0">
-            <div className="sticky top-[73px]">
+          <div className="w-[320px] shrink-0">
+            <div className="sticky top-[110px] space-y-6">
               <RightPanel
                 monthLogs={monthLogs}
                 pendingSessions={pendingSessions}
@@ -166,14 +200,17 @@ export default async function DashboardPage() {
             </div>
           </div>
         </div>
+
+        {/* Footer */}
+        <Footer />
       </div>
 
       {/* Floating Action Button */}
       <a
         href="#today-reminders"
-        className="fixed bottom-6 right-6 w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-blue-500 text-white shadow-lg shadow-primary/30 flex items-center justify-center hover:shadow-xl hover:scale-105 transition-all duration-200 z-50"
+        className="fixed bottom-8 right-8 w-16 h-16 rounded-2xl bg-gradient-to-br from-primary via-accent-blue to-accent-purple text-white shadow-2xl shadow-primary/40 flex items-center justify-center hover:shadow-primary/60 hover:scale-110 active:scale-95 transition-all duration-300 z-50 group"
       >
-        <PlusIcon className="w-6 h-6" />
+        <PlusIcon className="w-8 h-8 group-hover:rotate-90 transition-transform duration-300" />
       </a>
     </div>
   );

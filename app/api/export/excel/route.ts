@@ -163,6 +163,11 @@ export async function GET(request: Request) {
     m3.border = borderStyle;
     m3.font = defaultFont;
 
+    // Ensure NO borders for M4 and below
+    for (let r = 4; r <= 100; r++) {
+      sheet.getCell(`M${r}`).border = {};
+    }
+
     // Set M3 value as the calculated branch total and format as currency
     m3.numFmt = '#,##0"đ"';
     m3.value = branchTotalAmount;
