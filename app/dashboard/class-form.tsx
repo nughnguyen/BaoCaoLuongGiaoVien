@@ -177,7 +177,7 @@ export default function ClassForm() {
           <div className="bg-gray-50/50 rounded-3xl p-6 border border-border/50">
             <Label className="text-[11px] font-bold text-muted-light uppercase mb-3 block">Chọn các ngày trong tuần</Label>
             <div className="flex flex-wrap gap-2 mb-6">
-              {[2, 3, 4, 5, 6, 7, 1].map((day) => {
+              {[1, 2, 3, 4, 5, 6, 0].map((day) => {
                 const isActive = schedules.some((s) => s.day === day);
                 return (
                   <button
@@ -198,7 +198,7 @@ export default function ClassForm() {
 
             <div className="space-y-3 max-h-[220px] overflow-y-auto pr-2 custom-scrollbar">
               {schedules.sort((a, b) => {
-                const order = [2, 3, 4, 5, 6, 7, 1];
+                const order = [1, 2, 3, 4, 5, 6, 0];
                 return order.indexOf(a.day) - order.indexOf(b.day);
               }).map((s) => (
                 <div
