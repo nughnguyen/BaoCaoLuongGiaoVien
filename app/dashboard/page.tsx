@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { CalendarCheck2, PlusIcon, Sparkles } from "lucide-react";
 import ClassForm from "./class-form";
 import ClassList from "./class-list";
-import Sidebar from "./sidebar";
+import Sidebar, { MobileSidebar } from "./sidebar";
 import StatsCards from "./stats-cards";
 import EarningsChart from "./earnings-chart";
 import TodaySessions from "./today-sessions";
@@ -31,7 +31,11 @@ export default async function DashboardPage() {
     .select("id, full_name, role, bank_name, bank_account_name, bank_account_number")
     .eq("id", user.id)
     .single();
-  const profile = profileRaw as unknown as Profile | null;
+  const profile = (profileRaw as unknown as Profile | null) || {
+    full_name: user.user_metadata?.full_name || "Giáo viên",
+    id: user.id,
+    role: "teacher",
+  };
 
   const { data: classesRaw } = await supabase
     .from("classes")
@@ -71,42 +75,36 @@ export default async function DashboardPage() {
     missing.forEach((c) => pendingSessions.push({ class: c, dateIso: dIso }));
   }
 
-  const userName = profile?.full_name || user.user_metadata?.full_name || "Giáo viên";
+  const userName = profile?.full_name || "Giáo viên";
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <div id="dashboard-top" className="absolute top-0 left-0 w-full h-1" />
       
-      {/* Sidebar */}
-      <Sidebar
-        monthKey={monthKey}
-        profile={
-          profile || {
-            full_name: user.user_metadata?.full_name || "Giáo viên",
-            id: user.id,
-            role: "teacher",
-          }
-        }
-      />
+      {/* Sidebar (Desktop) */}
+      <Sidebar monthKey={monthKey} profile={profile} />
 
-      {/* Main Content */}
-      <div className="ml-[240px] flex flex-col min-h-screen">
+      {/* Main Content Area */}
+      <div className="flex-1 lg:ml-[240px] flex flex-col min-h-screen">
         {/* Header */}
-        <header className="sticky top-0 z-30 bg-white/70 backdrop-blur-xl border-b border-border/50 px-8 py-5">
+        <header className="sticky top-0 z-30 bg-white/70 backdrop-blur-xl border-b border-border/50 px-4 lg:px-8 py-4 lg:py-5">
           <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-black text-foreground tracking-tight">Dashboard</h1>
-                <Sparkles className="w-4 h-4 text-warning animate-pulse" />
+            <div className="flex items-center gap-3">
+              <MobileSidebar monthKey={monthKey} profile={profile} />
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <h1 className="text-xl lg:text-2xl font-black text-foreground tracking-tight">Dashboard</h1>
+                  <Sparkles className="w-4 h-4 text-warning animate-pulse hidden sm:block" />
+                </div>
+                <p className="text-[10px] lg:text-sm font-medium text-muted-light flex items-center gap-2">
+                  Monthly Overview — <Clock />
+                </p>
               </div>
-              <p className="text-sm font-medium text-muted-light flex items-center gap-2">
-                Monthly Overview — <Clock />
-              </p>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 lg:gap-4">
               <NotificationButton pendingSessions={pendingSessions} />
-              <div className="flex items-center gap-3 p-1 pr-4 rounded-full bg-gray-50 border border-border/50 hover:bg-white transition-colors cursor-pointer group">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary via-accent-blue to-accent-purple flex items-center justify-center text-white text-xs font-black shadow-lg group-hover:scale-105 transition-transform">
+              <div className="flex items-center gap-3 p-1 pr-1 lg:pr-4 rounded-full bg-gray-50 border border-border/50 hover:bg-white transition-colors cursor-pointer group">
+                <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-gradient-to-br from-primary via-accent-blue to-accent-purple flex items-center justify-center text-white text-[10px] lg:text-xs font-black shadow-lg group-hover:scale-105 transition-transform">
                   {userName
                     .split(" ")
                     .map((w: string) => w[0])
@@ -123,10 +121,10 @@ export default async function DashboardPage() {
           </div>
         </header>
 
-        {/* Dashboard Content — 2 columns (main + right panel) */}
-        <div className="flex-1 flex gap-6 p-8">
+        {/* Dashboard Content */}
+        <div className="flex-1 flex flex-col lg:flex-row gap-6 p-4 lg:p-8">
           {/* Main Column */}
-          <div className="flex-1 min-w-0 space-y-10">
+          <div className="flex-1 min-w-0 space-y-6 lg:space-y-10">
             {/* Stats Cards */}
             <StatsCards
               totalSalary={totalIncome}
@@ -140,15 +138,15 @@ export default async function DashboardPage() {
             </div>
 
             {/* Today Sessions */}
-            <section id="today-reminders" className="scroll-mt-[100px]">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-black text-foreground flex items-center gap-3 uppercase tracking-wider">
+            <section id="today-reminders" className="scroll-mt-[80px] lg:scroll-mt-[100px]">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <h2 className="text-base lg:text-lg font-black text-foreground flex items-center gap-3 uppercase tracking-wider">
                   <div className="p-2 rounded-xl bg-primary-light text-primary">
                     <CalendarCheck2 className="w-5 h-5" />
                   </div>
                   Ca dạy cần điểm danh
                 </h2>
-                <span className="px-3 py-1 rounded-full bg-danger-light text-danger text-[10px] font-black uppercase tracking-widest">
+                <span className="w-fit px-3 py-1 rounded-full bg-danger-light text-danger text-[10px] font-black uppercase tracking-widest">
                   {pendingSessions.length} ca chưa xác nhận
                 </span>
               </div>
@@ -156,42 +154,42 @@ export default async function DashboardPage() {
             </section>
 
             {/* Class Form */}
-            <section id="class-form" className="scroll-mt-[100px]">
+            <section id="class-form" className="scroll-mt-[80px] lg:scroll-mt-[100px]">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 rounded-xl bg-success-light text-success">
                   <PlusIcon className="w-5 h-5" />
                 </div>
-                <h2 className="text-lg font-black text-foreground uppercase tracking-wider">Tạo lớp học mới</h2>
+                <h2 className="text-base lg:text-lg font-black text-foreground uppercase tracking-wider">Tạo lớp học mới</h2>
               </div>
               <ClassForm />
             </section>
 
             {/* Class List */}
-            <section id="class-list" className="scroll-mt-[100px]">
+            <section id="class-list" className="scroll-mt-[80px] lg:scroll-mt-[100px]">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 rounded-xl bg-accent-blue/10 text-accent-blue">
                   <PlusIcon className="w-5 h-5" />
                 </div>
-                <h2 className="text-lg font-black text-foreground uppercase tracking-wider">Danh sách lớp học</h2>
+                <h2 className="text-base lg:text-lg font-black text-foreground uppercase tracking-wider">Danh sách lớp học</h2>
               </div>
               <ClassList classes={classes} />
             </section>
 
             {/* Session Table */}
-            <section id="month-report" className="scroll-mt-[100px]">
+            <section id="month-report" className="scroll-mt-[80px] lg:scroll-mt-[100px]">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 rounded-xl bg-accent-purple/10 text-accent-purple">
                   <PlusIcon className="w-5 h-5" />
                 </div>
-                <h2 className="text-lg font-black text-foreground uppercase tracking-wider">Báo cáo tháng</h2>
+                <h2 className="text-base lg:text-lg font-black text-foreground uppercase tracking-wider">Báo cáo tháng</h2>
               </div>
               <SessionTable monthLogs={monthLogs} />
             </section>
           </div>
 
           {/* Right Panel */}
-          <div className="w-[320px] shrink-0">
-            <div className="sticky top-[110px] space-y-6">
+          <div className="w-full lg:w-[320px] shrink-0">
+            <div className="lg:sticky lg:top-[110px] space-y-6">
               <RightPanel
                 monthLogs={monthLogs}
                 pendingSessions={pendingSessions}
@@ -208,9 +206,9 @@ export default async function DashboardPage() {
       {/* Floating Action Button */}
       <a
         href="#today-reminders"
-        className="fixed bottom-8 right-8 w-16 h-16 rounded-2xl bg-gradient-to-br from-primary via-accent-blue to-accent-purple text-white shadow-2xl shadow-primary/40 flex items-center justify-center hover:shadow-primary/60 hover:scale-110 active:scale-95 transition-all duration-300 z-50 group"
+        className="fixed bottom-6 right-6 lg:bottom-8 lg:right-8 w-14 h-14 lg:w-16 lg:h-16 rounded-2xl bg-gradient-to-br from-primary via-accent-blue to-accent-purple text-white shadow-2xl shadow-primary/40 flex items-center justify-center hover:shadow-primary/60 hover:scale-110 active:scale-95 transition-all duration-300 z-50 group"
       >
-        <PlusIcon className="w-8 h-8 group-hover:rotate-90 transition-transform duration-300" />
+        <PlusIcon className="w-6 h-6 lg:w-8 lg:h-8 group-hover:rotate-90 transition-transform duration-300" />
       </a>
     </div>
   );

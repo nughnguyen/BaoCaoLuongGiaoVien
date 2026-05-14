@@ -34,7 +34,7 @@ export default function Footer() {
               <a href="#" className="hover:text-primary transition-colors">Hỗ trợ</a>
             </div>
             <div className="flex items-center gap-2 text-xs text-muted-light mt-2">
-              <span>Phiên bản v2.4.1</span>
+              <span>Phiên bản v0.2.1</span>
               <span className="w-1 h-1 rounded-full bg-border" />
               <div className="flex items-center gap-1.5">
                 <span>Made with</span>
@@ -48,8 +48,8 @@ export default function Footer() {
         <div className="mt-8 pt-8 border-t border-border/50 flex flex-col md:flex-row justify-between items-center gap-4 text-[11px] text-muted-light font-medium uppercase tracking-wider">
           <p>© 2026 GumballZ. All rights reserved.</p>
           <div className="flex items-center gap-4">
-            <a href="#" className="hover:text-foreground transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-foreground transition-colors">Terms of Service</a>
+            <a href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</a>
+            <a href="/terms" className="hover:text-foreground transition-colors">Terms of Service</a>
           </div>
         </div>
       </div>

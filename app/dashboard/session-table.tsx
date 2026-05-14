@@ -101,21 +101,21 @@ export default function SessionTable({ monthLogs }: { monthLogs: AttendanceLogRo
           <thead>
             <tr className="border-b border-border bg-gray-50/50">
               <th
-                className="cursor-pointer px-5 py-3 text-left font-medium text-muted hover:text-foreground transition-colors select-none"
+                className="cursor-pointer px-4 lg:px-5 py-3 text-left font-medium text-muted hover:text-foreground transition-colors select-none"
                 onClick={() => handleSort("date")}
               >
                 Ngày {renderSortIcon("date")}
               </th>
               <th
-                className="cursor-pointer px-5 py-3 text-left font-medium text-muted hover:text-foreground transition-colors select-none"
+                className="cursor-pointer px-4 lg:px-5 py-3 text-left font-medium text-muted hover:text-foreground transition-colors select-none"
                 onClick={() => handleSort("name")}
               >
                 Lớp / Học viên {renderSortIcon("name")}
               </th>
-              <th className="px-5 py-3 text-left font-medium text-muted">Giờ</th>
-              <th className="px-5 py-3 text-left font-medium text-muted">Thành tiền</th>
-              <th className="px-5 py-3 text-left font-medium text-muted">Trạng thái</th>
-              <th className="px-5 py-3 text-right font-medium text-muted">Thao tác</th>
+              <th className="hidden sm:table-cell px-5 py-3 text-left font-medium text-muted">Giờ</th>
+              <th className="px-4 lg:px-5 py-3 text-left font-medium text-muted">Thành tiền</th>
+              <th className="hidden sm:table-cell px-5 py-3 text-left font-medium text-muted">Trạng thái</th>
+              <th className="px-4 lg:px-5 py-3 text-right font-medium text-muted">Thao tác</th>
             </tr>
           </thead>
           <tbody>
@@ -131,37 +131,37 @@ export default function SessionTable({ monthLogs }: { monthLogs: AttendanceLogRo
                   key={row.id}
                   className="border-b border-border/50 hover:bg-gray-50/50 transition-colors"
                 >
-                  <td className="px-5 py-3.5 whitespace-nowrap">
+                  <td className="px-4 lg:px-5 py-3.5 whitespace-nowrap">
                     {new Date(row.date).toLocaleDateString("vi-VN", {
                       weekday: "short",
                       day: "2-digit",
                       month: "2-digit",
                     })}
                   </td>
-                  <td className="px-5 py-3.5">
-                    <div>
-                      <p className="font-medium text-foreground">
+                  <td className="px-4 lg:px-5 py-3.5">
+                    <div className="min-w-[120px]">
+                      <p className="font-medium text-foreground truncate">
                         {row.classes?.class_name || "—"}
                       </p>
-                      <p className="text-xs text-muted">{row.classes?.student_name}</p>
+                      <p className="text-xs text-muted truncate">{row.classes?.student_name}</p>
                     </div>
                   </td>
-                  <td className="px-5 py-3.5 whitespace-nowrap">{row.duration}h</td>
-                  <td className="px-5 py-3.5 whitespace-nowrap font-medium text-success">
+                  <td className="hidden sm:table-cell px-5 py-3.5 whitespace-nowrap">{row.duration}h</td>
+                  <td className="px-4 lg:px-5 py-3.5 whitespace-nowrap font-bold text-success">
                     {Number(row.total_earned).toLocaleString("vi-VN")}đ
                   </td>
-                  <td className="px-5 py-3.5">
+                  <td className="hidden sm:table-cell px-5 py-3.5">
                     <Badge variant={row.status === "completed" ? "success" : "danger"}>
                       {row.status === "completed" ? "Hoàn thành" : "Vắng"}
                     </Badge>
                   </td>
-                  <td className="px-5 py-3.5 text-right">
+                  <td className="px-4 lg:px-5 py-3.5 text-right">
                     <button
                       onClick={() => onDelete(row)}
                       className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs text-danger hover:bg-danger-light transition-colors"
                     >
                       <Trash2Icon className="size-3.5" />
-                      Xóa
+                      <span className="hidden xs:inline">Xóa</span>
                     </button>
                   </td>
                 </tr>

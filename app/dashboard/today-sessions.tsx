@@ -102,45 +102,47 @@ export default function TodaySessions({ pendingSessions }: { pendingSessions: Pe
         return (
           <div
             key={key}
-            className="bg-card-bg rounded-2xl border border-border shadow-card p-4 flex items-center gap-4 hover:shadow-card-hover transition-all duration-200"
+            className="bg-card-bg rounded-2xl border border-border shadow-card p-4 flex flex-col sm:flex-row sm:items-center gap-4 hover:shadow-card-hover transition-all duration-200"
           >
-            {/* Time indicator */}
-            <div className={`w-14 h-14 rounded-xl flex flex-col items-center justify-center shrink-0 ${
-              isToday ? "bg-primary-light" : "bg-gray-50"
-            }`}>
-              <Clock className={`w-4 h-4 mb-0.5 ${isToday ? "text-primary" : "text-muted"}`} />
-              <span className={`text-[11px] font-bold ${isToday ? "text-primary" : "text-muted"}`}>
-                {timeRange?.split("–")[0] || "—"}
-              </span>
-            </div>
-
-            {/* Info */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <h4 className="text-sm font-semibold text-foreground truncate">
-                  {session.class.class_name}
-                </h4>
-                <Badge variant={isToday ? "default" : "outline"} className="shrink-0 text-[10px]">
-                  {dayName}
-                </Badge>
+            <div className="flex items-center gap-4 flex-1 min-w-0">
+              {/* Time indicator */}
+              <div className={`w-14 h-14 rounded-xl flex flex-col items-center justify-center shrink-0 ${
+                isToday ? "bg-primary-light" : "bg-gray-50"
+              }`}>
+                <Clock className={`w-4 h-4 mb-0.5 ${isToday ? "text-primary" : "text-muted"}`} />
+                <span className={`text-[11px] font-bold ${isToday ? "text-primary" : "text-muted"}`}>
+                  {timeRange?.split("–")[0] || "—"}
+                </span>
               </div>
-              <p className="text-xs text-muted">
-                {session.class.student_name}
-                {timeRange && <span className="ml-2">• {timeRange}</span>}
-              </p>
-              <p className="text-xs font-medium text-success mt-1">
-                {Number(session.class.hourly_rate).toLocaleString("vi-VN")}đ/giờ
-              </p>
+
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <h4 className="text-sm font-bold text-foreground truncate">
+                    {session.class.class_name}
+                  </h4>
+                  <Badge variant={isToday ? "default" : "outline"} className="shrink-0 text-[10px]">
+                    {dayName}
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted truncate">
+                  {session.class.student_name}
+                  {timeRange && <span className="ml-2">• {timeRange}</span>}
+                </p>
+                <p className="text-xs font-bold text-success mt-1">
+                  {Number(session.class.hourly_rate).toLocaleString("vi-VN")}đ/giờ
+                </p>
+              </div>
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-border/50">
               <Button
                 size="sm"
                 variant="success"
                 onClick={() => handleComplete(session.class.id, "2", session.dateIso)}
                 disabled={isPending}
-                className="gap-1.5"
+                className="flex-1 sm:flex-none gap-1.5"
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 Xác nhận
@@ -150,7 +152,7 @@ export default function TodaySessions({ pendingSessions }: { pendingSessions: Pe
                 variant="outline"
                 onClick={() => handleAbsent(session.class.id, session.dateIso)}
                 disabled={isPending}
-                className="gap-1.5 text-danger border-danger/20 hover:bg-danger-light hover:border-danger/30"
+                className="flex-1 sm:flex-none gap-1.5 text-danger border-danger/20 hover:bg-danger-light hover:border-danger/30"
               >
                 <XCircle className="w-3.5 h-3.5" />
                 Vắng
